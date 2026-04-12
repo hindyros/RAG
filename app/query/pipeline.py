@@ -154,6 +154,7 @@ class QueryPipeline:
             citations=citations,
             intent=intent,
             refused=False,
+            grounded=True,  # answer was built from retrieved document chunks
         )
 
     # ── Private helpers ───────────────────────────────────────────────────────

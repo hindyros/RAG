@@ -67,6 +67,10 @@ class QueryResponse(BaseModel):
     intent: Optional[IntentResult] = None
     refused: bool = False
     refusal_reason: Optional[str] = None   # "no_relevant_documents" | "policy"
+    grounded: bool = False
+    # grounded=True  → answer was built from retrieved document chunks
+    # grounded=False → conversational reply, refusal, or empty-store fallback
+    # Intended for the UI to show a "sourced from documents" indicator
 
 
 # ── Health ───────────────────────────────────────────────────────────────────
