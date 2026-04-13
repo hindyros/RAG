@@ -36,7 +36,14 @@ class ChunkMetadata:
 
     Stored as a plain dataclass rather than a dict so that access is typed
     and IDE-navigable, but converted to dict for JSON serialisation.
+
+    document_id is a UUID assigned once at ingest time (see ingestion/pipeline.py).
+    It is stable across requests and allows future document-level operations
+    (deletion, re-indexing) without relying on filenames.  Two files with the
+    same name but different content get different UUIDs; the filename is only
+    for human-readable display in citations.
     """
+    document_id: str            # UUID assigned at ingest time
     source_file: str
     page_number: int
     chunk_index: int
@@ -45,6 +52,7 @@ class ChunkMetadata:
 
     def to_dict(self) -> dict:
         return {
+            "document_id": self.document_id,
             "source_file": self.source_file,
             "page_number": self.page_number,
             "chunk_index": self.chunk_index,
@@ -55,6 +63,7 @@ class ChunkMetadata:
     @classmethod
     def from_dict(cls, d: dict) -> "ChunkMetadata":
         return cls(
+            document_id=d.get("document_id", ""),   # "" for pre-UUID store data
             source_file=d["source_file"],
             page_number=d["page_number"],
             chunk_index=d["chunk_index"],
@@ -124,14 +133,18 @@ class VectorStore:
         self,
         chunks: list[Chunk],
         embeddings: list[list[float]],
+        document_id: str,
     ) -> int:
         """
         Add a batch of chunks with their precomputed embeddings.
 
         Parameters
         ----------
-        chunks     : Chunk objects from the chunker — provides metadata.
-        embeddings : Float vectors from mistral-embed, aligned with chunks.
+        chunks      : Chunk objects from the chunker — provides metadata.
+        embeddings  : Float vectors from mistral-embed, aligned with chunks.
+        document_id : UUID assigned by the ingestion pipeline for this file.
+                      Stored on every chunk so future document-level operations
+                      (e.g. deletion) can target all chunks of one document.
 
         Returns
         -------
@@ -145,6 +158,7 @@ class VectorStore:
         # Build metadata list and collect texts for BM25
         new_metadata = [
             ChunkMetadata(
+                document_id=document_id,
                 source_file=c.source_file,
                 page_number=c.page_number,
                 chunk_index=c.chunk_index,
@@ -162,7 +176,8 @@ class VectorStore:
         self._metadata.extend(new_metadata)
         self._source_files.update(c.source_file for c in chunks)
 
-        logger.info("Added %d chunks. Store total: %d.", len(chunks), len(self._metadata))
+        logger.info("Added %d chunks (doc_id=%s). Store total: %d.",
+                    len(chunks), document_id, len(self._metadata))
         return len(chunks)
 
     # ── Retrieval ─────────────────────────────────────────────────────────────

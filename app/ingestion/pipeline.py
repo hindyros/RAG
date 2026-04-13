@@ -15,6 +15,7 @@ Embedding in batches:
 """
 
 import logging
+import uuid
 from dataclasses import dataclass
 
 from app.config import Settings
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class IngestionResult:
     filename: str
+    document_id: str          # UUID assigned to this file; "" when skipped
     chunks_added: int
     skipped: bool = False     # True when the file was already indexed
     skip_reason: str = ""
@@ -80,12 +82,17 @@ async def _ingest_one(
         logger.info("Skipping %s — already in store.", filename)
         return IngestionResult(
             filename=filename,
+            document_id="",
             chunks_added=0,
             skipped=True,
             skip_reason="already_indexed",
         )
 
-    logger.info("Ingesting %s (%d bytes).", filename, len(raw_bytes))
+    # Assign a stable UUID to this document before any processing so it can
+    # be threaded through to every chunk and used for future document-level
+    # operations (deletion, re-indexing) without relying on the filename.
+    document_id = str(uuid.uuid4())
+    logger.info("Ingesting %s (%d bytes) as doc_id=%s.", filename, len(raw_bytes), document_id)
 
     # ── Extract ───────────────────────────────────────────────────────────────
     extracted = extract_pdf(raw_bytes, filename)
@@ -93,6 +100,7 @@ async def _ingest_one(
         logger.warning("%s: no text blocks extracted — skipping.", filename)
         return IngestionResult(
             filename=filename,
+            document_id="",
             chunks_added=0,
             skipped=True,
             skip_reason="no_text_extracted",
@@ -109,6 +117,7 @@ async def _ingest_one(
     if not chunks:
         return IngestionResult(
             filename=filename,
+            document_id="",
             chunks_added=0,
             skipped=True,
             skip_reason="chunking_produced_no_output",
@@ -129,6 +138,6 @@ async def _ingest_one(
         )
 
     # ── Add to store ──────────────────────────────────────────────────────────
-    added = store.add_chunks(chunks, all_embeddings)
+    added = store.add_chunks(chunks, all_embeddings, document_id=document_id)
 
-    return IngestionResult(filename=filename, chunks_added=added)
+    return IngestionResult(filename=filename, document_id=document_id, chunks_added=added)

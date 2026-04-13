@@ -53,6 +53,7 @@ class IngestResponse(BaseModel):
     files_processed: int
     chunks_added: int
     total_chunks_in_store: int
+    document_ids: list[str]   # UUID per successfully ingested file
 
 
 # ── Query ────────────────────────────────────────────────────────────────────

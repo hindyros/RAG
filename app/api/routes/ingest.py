@@ -107,9 +107,12 @@ async def ingest_endpoint(
         files_processed, len(results), total_added,
     )
 
+    document_ids = [r.document_id for r in results if not r.skipped]
+
     return IngestResponse(
         message=f"Processed {files_processed} file(s), added {total_added} chunks.",
         files_processed=files_processed,
         chunks_added=total_added,
         total_chunks_in_store=store.total_chunks,
+        document_ids=document_ids,
     )

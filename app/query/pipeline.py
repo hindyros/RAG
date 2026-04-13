@@ -101,9 +101,18 @@ class QueryPipeline:
         hyde_embedding, hypothetical_doc = await self._hyde.transform(question)
 
         # ── Step 5: Hybrid retrieval ─────────────────────────────────────────
+        # Both retrievers now use the HyDE hypothetical document rather than
+        # the raw question.  Previously, cosine used the HyDE embedding while
+        # BM25 used the original query tokens — meaning the two retrievers were
+        # searching for different things, weakening the RRF fusion assumption
+        # that both ranked lists represent the same information need.
+        #
+        # The hypothetical document is a natural keyword expansion of the query:
+        # it is written in document style and uses the vocabulary the corpus uses,
+        # so BM25 picks up the same term signal the embedding captures.
         candidates = hybrid_retrieve(
             query_embedding=hyde_embedding,
-            query_text=question,
+            query_text=hypothetical_doc,
             cosine_index=self._store.get_cosine_index(),
             bm25_index=self._store.get_bm25_index(),
             top_k=self._settings.top_k_retrieval,
