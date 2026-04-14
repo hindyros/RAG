@@ -36,7 +36,7 @@ dependencies = [
 
     # Hallucination detection model (vectara/hallucination_evaluation_model)
     "torch>=2.2",
-    "transformers>=4.40",
+    "transformers>=4.40,<5.0",
     "sentencepiece>=0.1.99",
     "protobuf>=3.20",
 ]
