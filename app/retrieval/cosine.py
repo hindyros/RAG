@@ -95,6 +95,26 @@ class CosineIndex:
 
         return [(int(idx), float(scores[idx])) for idx in top_indices]
 
+    def remove_rows(self, indices: list[int]) -> None:
+        """
+        Delete the rows at the given indices and refresh the unit-vector cache.
+
+        Parameters
+        ----------
+        indices : positions to remove (order does not matter, duplicates ignored).
+        """
+        if not indices or self._matrix.size == 0:
+            return
+        keep = np.ones(len(self._matrix), dtype=bool)
+        for i in indices:
+            keep[i] = False
+        self._matrix = self._matrix[keep]
+        if self._matrix.size > 0:
+            self._refresh_unit_matrix()
+        else:
+            self._matrix = np.empty((0, 0), dtype=np.float32)
+            self._unit_matrix = np.empty((0, 0), dtype=np.float32)
+
     @property
     def size(self) -> int:
         return len(self._matrix)

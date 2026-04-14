@@ -206,6 +206,35 @@ class BM25:
         instance.avgdl = data["avgdl"]
         return instance
 
+    def remove_documents(self, indices: list[int]) -> None:
+        """
+        Remove documents at the given positions and recompute IDF.
+
+        Parameters
+        ----------
+        indices : positions to remove (order does not matter, duplicates ignored).
+        """
+        if not indices:
+            return
+        remove_set = set(indices)
+        keep = [i for i in range(len(self._corpus)) if i not in remove_set]
+
+        self._corpus    = [self._corpus[i]    for i in keep]
+        self._tf_cache  = [self._tf_cache[i]  for i in keep]
+
+        # Recompute doc_freq from scratch (cheaper than incremental subtraction
+        # when removing multiple docs at once)
+        self._doc_freq = {}
+        self._total_length = 0
+        for tokens, tf in zip(self._corpus, self._tf_cache):
+            self._total_length += len(tokens)
+            for term in tf:
+                self._doc_freq[term] = self._doc_freq.get(term, 0) + 1
+
+        n = len(self._corpus)
+        self.avgdl = self._total_length / n if n > 0 else 0.0
+        self._recompute_idf()
+
     @property
     def size(self) -> int:
         return len(self._corpus)

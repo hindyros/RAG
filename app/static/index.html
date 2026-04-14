@@ -35,7 +35,7 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Header ──────────────────────────────────────────────────── */
+    /* ── Header ───────────────────────────────────────────────────── */
     #header {
       position: fixed;
       top: 0; left: 0; right: 0;
@@ -63,33 +63,30 @@
 
     #doc-badge {
       font-size: 12px;
-      font-weight: 400;
       color: var(--muted);
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 99px;
       padding: 3px 10px;
-      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: color 150ms, border-color 150ms;
     }
+    #doc-badge:hover { color: var(--text); border-color: var(--border-mid); }
 
-    #upload-btn {
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+
+    .btn-header {
       font-size: 14px;
-      font-weight: 400;
       color: var(--text);
       background: var(--surface);
       border: 1px solid var(--border-mid);
       border-radius: 8px;
       padding: 7px 16px;
       cursor: pointer;
-      transition: background 150ms var(--ease), border-color 150ms var(--ease), color 150ms;
-      letter-spacing: 0.01em;
+      transition: background 150ms, border-color 150ms, color 150ms;
     }
-    #upload-btn:hover {
-      background: var(--surface-2);
-      border-color: rgba(255,255,255,0.16);
-      color: var(--text-bright);
-    }
-    #upload-btn:active { transform: scale(0.98); }
+    .btn-header:hover { background: var(--surface-2); border-color: rgba(255,255,255,0.16); color: var(--text-bright); }
+    .btn-header:active { transform: scale(0.98); }
 
     /* ── Messages ─────────────────────────────────────────────────── */
     #messages {
@@ -101,7 +98,6 @@
       gap: 20px;
     }
 
-    /* Empty state */
     #empty-state {
       display: flex;
       flex-direction: column;
@@ -109,23 +105,11 @@
       justify-content: center;
       min-height: calc(100vh - 180px);
       gap: 12px;
-      color: var(--muted);
       text-align: center;
     }
-    #empty-state .empty-title {
-      font-size: 22px;
-      font-weight: 500;
-      color: var(--text);
-      letter-spacing: -0.02em;
-    }
-    #empty-state .empty-sub {
-      font-size: 15px;
-      color: var(--muted);
-      max-width: 360px;
-      line-height: 1.6;
-    }
+    .empty-title { font-size: 22px; font-weight: 500; color: var(--text); letter-spacing: -0.02em; }
+    .empty-sub   { font-size: 15px; color: var(--muted); max-width: 360px; line-height: 1.6; }
 
-    /* User bubble */
     .msg-user {
       align-self: flex-end;
       max-width: 68%;
@@ -139,7 +123,6 @@
       word-break: break-word;
     }
 
-    /* Assistant card */
     .msg-assistant {
       align-self: flex-start;
       width: 100%;
@@ -152,37 +135,14 @@
       gap: 14px;
     }
 
-    .answer-text {
-      color: var(--text-bright);
-      font-size: 15px;
-      line-height: 1.75;
-    }
+    .answer-text { color: var(--text-bright); font-size: 15px; line-height: 1.75; }
     .answer-text strong { color: #e8e5de; font-weight: 600; }
-    .answer-text h3 {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-bright);
-      margin: 12px 0 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-    .answer-text ul, .answer-text ol {
-      padding-left: 22px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
+    .answer-text h3 { font-size: 14px; font-weight: 600; color: var(--text-bright); margin: 12px 0 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .answer-text ul, .answer-text ol { padding-left: 22px; display: flex; flex-direction: column; gap: 4px; }
     .answer-text li { color: var(--text); }
-    .answer-text sup {
-      font-size: 10px;
-      color: var(--accent);
-      font-weight: 600;
-      vertical-align: super;
-      line-height: 0;
-    }
+    .answer-text sup { font-size: 10px; color: var(--accent); font-weight: 600; vertical-align: super; line-height: 0; }
     .answer-text p + p { margin-top: 10px; }
 
-    /* Footer row inside card */
     .card-footer {
       display: flex;
       align-items: center;
@@ -192,135 +152,58 @@
       border-top: 1px solid var(--border);
     }
 
-    /* Source badge */
-    .badge-sourced {
-      font-size: 12px;
-      color: var(--green);
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .badge-general {
-      font-size: 12px;
-      color: var(--muted);
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
+    .badge-sourced { font-size: 12px; color: var(--green);  display: inline-flex; align-items: center; gap: 5px; }
+    .badge-general { font-size: 12px; color: var(--muted);  display: inline-flex; align-items: center; gap: 5px; }
+    .dot-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--border-mid); flex-shrink: 0; }
 
-    /* Divider dot */
-    .dot-sep {
-      width: 3px; height: 3px;
-      border-radius: 50%;
-      background: var(--border-mid);
-      flex-shrink: 0;
-    }
-
-    /* Citations toggle */
     .citations-toggle {
-      font-size: 13px;
-      color: var(--muted);
-      cursor: pointer;
-      user-select: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      transition: color 150ms;
+      font-size: 13px; color: var(--muted); cursor: pointer; user-select: none;
+      display: inline-flex; align-items: center; gap: 5px; transition: color 150ms;
     }
     .citations-toggle:hover { color: var(--text); }
-    .citations-toggle .chevron {
-      font-size: 10px;
-      display: inline-block;
-      transition: transform 200ms var(--ease);
-    }
+    .citations-toggle .chevron { font-size: 10px; display: inline-block; transition: transform 200ms var(--ease); }
     .citations-toggle.open .chevron { transform: rotate(180deg); }
 
-    .citations-body {
-      overflow: hidden;
-      max-height: 0;
-      transition: max-height 300ms var(--ease);
-    }
+    .citations-body { overflow: hidden; max-height: 0; transition: max-height 300ms var(--ease); }
     .citations-body.open { max-height: 2000px; }
 
-    .citation-item {
-      display: flex;
-      gap: 12px;
-      padding: 10px 0;
-      border-top: 1px solid var(--border);
-      align-items: baseline;
-    }
-    .citation-index {
-      color: var(--accent);
-      font-weight: 600;
-      font-size: 12px;
-      flex-shrink: 0;
-      min-width: 24px;
-    }
+    .citation-item { display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); align-items: baseline; }
+    .citation-index { color: var(--accent); font-weight: 600; font-size: 12px; flex-shrink: 0; min-width: 24px; }
     .citation-meta { display: flex; flex-direction: column; gap: 3px; }
     .citation-source { color: var(--text-bright); font-size: 13px; font-weight: 500; }
     .citation-score { color: var(--muted); font-size: 12px; }
     .citation-excerpt { color: var(--muted); font-size: 13px; line-height: 1.5; }
 
-    /* Hallucination indicator */
     .hall-toggle {
-      font-size: 12px;
-      cursor: pointer;
-      user-select: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      border-radius: 99px;
-      padding: 3px 10px;
-      border: 1px solid;
+      font-size: 12px; cursor: pointer; user-select: none;
+      display: inline-flex; align-items: center; gap: 5px;
+      border-radius: 99px; padding: 3px 10px; border: 1px solid;
       transition: opacity 150ms;
     }
     .hall-toggle:hover { opacity: 0.75; }
     .hall-toggle:active { transform: scale(0.97); }
-    .hall-toggle .chevron {
-      font-size: 10px;
-      display: inline-block;
-      transition: transform 200ms var(--ease);
-    }
+    .hall-toggle .chevron { font-size: 10px; display: inline-block; transition: transform 200ms var(--ease); }
     .hall-toggle.open .chevron { transform: rotate(180deg); }
     .hall-consistent { color: var(--green);  background: rgba(76,175,130,0.08); border-color: rgba(76,175,130,0.2); }
     .hall-check      { color: var(--yellow); background: rgba(201,146,26,0.08); border-color: rgba(201,146,26,0.2); }
     .hall-flagged    { color: var(--red);    background: rgba(192,85,85,0.08);  border-color: rgba(192,85,85,0.2); }
 
-    .hall-body {
-      overflow: hidden;
-      max-height: 0;
-      transition: max-height 350ms var(--ease);
-    }
+    .hall-body { overflow: hidden; max-height: 0; transition: max-height 350ms var(--ease); }
     .hall-body.open { max-height: 2000px; }
-
-    .hall-sentences {
-      font-size: 15px;
-      line-height: 1.8;
-      padding-top: 10px;
-    }
+    .hall-sentences { font-size: 15px; line-height: 1.8; padding-top: 10px; }
     .sent-span { border-radius: 3px; padding: 1px 3px; cursor: default; }
     .sent-green  { background: rgba(76,175,130,0.14); }
     .sent-yellow { background: rgba(201,146,26,0.16); }
     .sent-red    { background: rgba(192,85,85,0.16); }
 
-    /* Loading skeleton */
     .skeleton {
-      background: linear-gradient(
-        90deg,
-        var(--surface) 25%,
-        rgba(255,255,255,0.05) 50%,
-        var(--surface) 75%
-      );
+      background: linear-gradient(90deg, var(--surface) 25%, rgba(255,255,255,0.05) 50%, var(--surface) 75%);
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;
-      border-radius: 6px;
-      height: 16px;
+      border-radius: 6px; height: 16px;
     }
     .skeleton + .skeleton { margin-top: 10px; }
-    @keyframes shimmer {
-      0%   { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
     /* ── Input bar ────────────────────────────────────────────────── */
     #input-bar {
@@ -343,133 +226,153 @@
       padding: 10px 10px 10px 18px;
       transition: border-color 150ms;
     }
-    #input-inner:focus-within {
-      border-color: rgba(87, 94, 207, 0.45);
-    }
+    #input-inner:focus-within { border-color: rgba(87, 94, 207, 0.45); }
 
     #question-input {
-      flex: 1;
-      background: none;
-      border: none;
-      color: var(--text-bright);
-      font-family: var(--font);
-      font-size: 15px;
-      line-height: 1.6;
-      outline: none;
-      resize: none;
-      min-height: 24px;
-      max-height: 160px;
+      flex: 1; background: none; border: none;
+      color: var(--text-bright); font-family: var(--font);
+      font-size: 15px; line-height: 1.6;
+      outline: none; resize: none;
+      min-height: 24px; max-height: 160px;
     }
     #question-input::placeholder { color: var(--muted); }
 
     #send-btn {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 9px;
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      flex-shrink: 0;
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 9px; width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0;
       transition: opacity 150ms, transform 100ms;
     }
     #send-btn:hover:not(:disabled) { opacity: 0.85; }
     #send-btn:active:not(:disabled) { transform: scale(0.93); }
     #send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-    /* ── Upload modal ─────────────────────────────────────────────── */
-    #modal-overlay {
+    /* ── Shared modal base ────────────────────────────────────────── */
+    .modal-overlay {
       display: none;
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       background: rgba(0,0,0,0.55);
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
       z-index: 200;
-      align-items: center;
-      justify-content: center;
+      align-items: center; justify-content: center;
     }
-    #modal-overlay.open { display: flex; }
+    .modal-overlay.open { display: flex; }
 
-    #modal-card {
+    .modal-card {
       background: var(--surface);
       border: 1px solid var(--border-mid);
       border-radius: 16px;
-      padding: 32px;
-      width: min(480px, 92vw);
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
+      padding: 28px 32px 32px;
+      width: min(520px, 92vw);
+      display: flex; flex-direction: column; gap: 20px;
       box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+      max-height: 85vh;
+      overflow: hidden;
     }
 
-    #modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
     }
-    #modal-title {
-      font-size: 17px;
-      font-weight: 500;
-      color: var(--text-bright);
-      letter-spacing: -0.01em;
+    .modal-title { font-size: 17px; font-weight: 500; color: var(--text-bright); letter-spacing: -0.01em; }
+    .modal-close {
+      background: none; border: none; color: var(--muted);
+      font-size: 20px; cursor: pointer; line-height: 1;
+      padding: 2px 6px; border-radius: 6px; transition: color 150ms, background 150ms;
     }
-    #modal-close {
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 20px;
-      cursor: pointer;
-      line-height: 1;
-      padding: 2px 6px;
-      border-radius: 6px;
-      transition: color 150ms, background 150ms;
-    }
-    #modal-close:hover { color: var(--text); background: var(--surface-2); }
+    .modal-close:hover { color: var(--text); background: var(--surface-2); }
 
+    /* ── Upload modal ─────────────────────────────────────────────── */
     #drop-zone {
       border: 1.5px dashed var(--border-mid);
-      border-radius: 12px;
-      padding: 44px 24px;
-      text-align: center;
-      color: var(--muted);
-      cursor: pointer;
-      transition: border-color 150ms var(--ease), background 150ms;
-      font-size: 14px;
-      line-height: 1.6;
+      border-radius: 12px; padding: 44px 24px;
+      text-align: center; color: var(--muted);
+      cursor: pointer; transition: border-color 150ms, background 150ms;
+      font-size: 14px; line-height: 1.6;
     }
-    #drop-zone .dz-icon {
-      font-size: 28px;
-      display: block;
-      margin-bottom: 10px;
-      opacity: 0.5;
-    }
-    #drop-zone .dz-hint {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 6px;
-      opacity: 0.7;
-    }
-    #drop-zone:hover,
-    #drop-zone.drag-over {
-      border-color: var(--accent);
-      background: var(--accent-dim);
-      color: var(--text);
-    }
-
+    #drop-zone .dz-icon { font-size: 28px; display: block; margin-bottom: 10px; opacity: 0.5; }
+    #drop-zone .dz-hint { font-size: 12px; color: var(--muted); margin-top: 6px; opacity: 0.7; }
+    #drop-zone:hover, #drop-zone.drag-over { border-color: var(--accent); background: var(--accent-dim); color: var(--text); }
     #file-input { display: none; }
 
-    #upload-status {
-      font-size: 13px;
-      color: var(--muted);
-      min-height: 18px;
-      text-align: center;
-    }
+    #upload-status { font-size: 13px; color: var(--muted); min-height: 18px; text-align: center; }
     #upload-status.success { color: var(--green); }
     #upload-status.error   { color: var(--red); }
+
+    .upload-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .upload-actions.hidden { display: none; }
+
+    .btn-secondary {
+      background: none; border: 1px solid var(--border-mid);
+      color: var(--muted); border-radius: 8px; padding: 7px 16px;
+      font-family: var(--font); font-size: 14px; cursor: pointer;
+      transition: color 150ms, border-color 150ms;
+    }
+    .btn-secondary:hover { color: var(--text); border-color: rgba(255,255,255,0.16); }
+
+    .btn-primary {
+      background: var(--accent); border: none; color: #fff;
+      border-radius: 8px; padding: 7px 16px;
+      font-family: var(--font); font-size: 14px; cursor: pointer;
+      transition: opacity 150ms;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+
+    /* ── Documents modal ──────────────────────────────────────────── */
+    #docs-modal .modal-card { width: min(600px, 92vw); }
+
+    #docs-list {
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .doc-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      transition: background 150ms;
+    }
+    .doc-item:hover { background: var(--surface-2); }
+
+    .doc-icon {
+      width: 36px; height: 36px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+      color: var(--muted);
+    }
+
+    .doc-info { flex: 1; min-width: 0; }
+    .doc-name {
+      color: var(--text-bright); font-size: 14px; font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .doc-meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+    .doc-delete {
+      background: none; border: 1px solid transparent; color: var(--muted);
+      border-radius: 6px; padding: 5px 10px; font-size: 12px;
+      cursor: pointer; flex-shrink: 0;
+      transition: color 150ms, border-color 150ms, background 150ms;
+    }
+    .doc-delete:hover { color: var(--red); border-color: rgba(192,85,85,0.3); background: rgba(192,85,85,0.07); }
+    .doc-delete:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .docs-empty {
+      text-align: center; color: var(--muted);
+      font-size: 14px; padding: 40px 0;
+    }
+
+    #docs-error { font-size: 13px; color: var(--red); min-height: 18px; }
   </style>
 </head>
 <body>
@@ -478,9 +381,12 @@
 <header id="header">
   <div id="logo">
     RAG
-    <span id="doc-badge">0 docs</span>
+    <span id="doc-badge" onclick="openDocsModal()" title="View documents">0 docs</span>
   </div>
-  <button id="upload-btn" onclick="openModal()">Upload ⊕</button>
+  <div class="header-actions">
+    <button class="btn-header" onclick="openDocsModal()">Documents</button>
+    <button class="btn-header" onclick="openUploadModal()">Upload ⊕</button>
+  </div>
 </header>
 
 <!-- ── Messages ────────────────────────────────────────────────────── -->
@@ -494,12 +400,7 @@
 <!-- ── Input bar ───────────────────────────────────────────────────── -->
 <div id="input-bar">
   <div id="input-inner">
-    <textarea
-      id="question-input"
-      rows="1"
-      placeholder="Ask a question…"
-      onkeydown="handleKey(event)"
-    ></textarea>
+    <textarea id="question-input" rows="1" placeholder="Ask a question…" onkeydown="handleKey(event)"></textarea>
     <button id="send-btn" onclick="sendQuery()" title="Send">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path d="M3 8L13 8M13 8L9 4M13 8L9 12" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
@@ -509,11 +410,11 @@
 </div>
 
 <!-- ── Upload modal ─────────────────────────────────────────────────── -->
-<div id="modal-overlay" role="dialog" aria-modal="true">
-  <div id="modal-card">
-    <div id="modal-header">
-      <div id="modal-title">Upload documents</div>
-      <button id="modal-close" onclick="closeModal()">×</button>
+<div id="upload-modal" class="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title">Upload documents</div>
+      <button class="modal-close" onclick="closeUploadModal()">×</button>
     </div>
     <div
       id="drop-zone"
@@ -528,17 +429,35 @@
     </div>
     <input id="file-input" type="file" multiple accept=".pdf" onchange="onFileSelect(event)" />
     <div id="upload-status"></div>
+    <!-- shown only after a successful upload -->
+    <div class="upload-actions hidden" id="upload-actions">
+      <button class="btn-secondary" onclick="resetUploadModal()">Upload another</button>
+      <button class="btn-primary" onclick="closeUploadModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Documents modal ───────────────────────────────────────────────── -->
+<div id="docs-modal" class="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title">Documents</div>
+      <button class="modal-close" onclick="closeDocsModal()">×</button>
+    </div>
+    <div id="docs-error"></div>
+    <div id="docs-list">
+      <div class="docs-empty">Loading…</div>
+    </div>
   </div>
 </div>
 
 <script>
-  // ── State ─────────────────────────────────────────────────────────
+  // ── State ──────────────────────────────────────────────────────────
   const state = { documentCount: 0, isLoading: false };
 
-  // ── Init ──────────────────────────────────────────────────────────
+  // ── Init ───────────────────────────────────────────────────────────
   async function init() {
     await refreshHealth();
-
     const ta = document.getElementById('question-input');
     ta.addEventListener('input', function () {
       this.style.height = 'auto';
@@ -552,12 +471,16 @@
       if (!r.ok) return;
       const d = await r.json();
       state.documentCount = d.total_documents ?? 0;
-      document.getElementById('doc-badge').textContent =
-        state.documentCount + (state.documentCount === 1 ? ' doc' : ' docs');
+      updateDocBadge();
     } catch (_) {}
   }
 
-  // ── Query ──────────────────────────────────────────────────────────
+  function updateDocBadge() {
+    document.getElementById('doc-badge').textContent =
+      state.documentCount + (state.documentCount === 1 ? ' doc' : ' docs');
+  }
+
+  // ── Query ───────────────────────────────────────────────────────────
   async function sendQuery() {
     const input = document.getElementById('question-input');
     const question = input.value.trim();
@@ -566,7 +489,6 @@
     state.isLoading = true;
     document.getElementById('send-btn').disabled = true;
 
-    // Remove empty state
     const es = document.getElementById('empty-state');
     if (es) es.remove();
 
@@ -600,7 +522,7 @@
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendQuery(); }
   }
 
-  // ── Message builders ───────────────────────────────────────────────
+  // ── Message builders ────────────────────────────────────────────────
   function appendUserMessage(text) {
     const el = document.createElement('div');
     el.className = 'msg-user';
@@ -628,53 +550,33 @@
     const card = document.createElement('div');
     card.className = 'msg-assistant';
 
-    // Answer
     const answerEl = document.createElement('div');
     answerEl.className = 'answer-text';
     answerEl.innerHTML = renderMarkdown(data.answer ?? '');
     card.appendChild(answerEl);
 
-    // Footer row
     const footer = document.createElement('div');
     footer.className = 'card-footer';
 
-    // Source badge
     const badge = document.createElement('span');
-    if (data.grounded) {
-      badge.className = 'badge-sourced';
-      badge.textContent = '● sourced';
-    } else {
-      badge.className = 'badge-general';
-      badge.textContent = '◌ general';
-    }
+    badge.className = data.grounded ? 'badge-sourced' : 'badge-general';
+    badge.textContent = data.grounded ? '● sourced' : '◌ general';
     footer.appendChild(badge);
 
-    // Citations
     if (data.citations && data.citations.length > 0) {
       footer.appendChild(makeDot());
       footer.appendChild(buildCitationsToggle(data.citations));
     }
-
-    // Hallucination pill
     if (data.grounded && data.hallucination) {
       footer.appendChild(makeDot());
-      const pill = buildHallPill(data.hallucination);
-      footer.appendChild(pill);
+      footer.appendChild(buildHallPill(data.hallucination));
     }
-
     card.appendChild(footer);
 
-    // Expandable sections (appended after footer)
-    if (data.citations && data.citations.length > 0) {
-      card.appendChild(buildCitationsBody(data.citations));
-    }
-    if (data.grounded && data.hallucination) {
-      card.appendChild(buildHallBody(data.hallucination));
-    }
+    if (data.citations && data.citations.length > 0) card.appendChild(buildCitationsBody(data.citations));
+    if (data.grounded && data.hallucination) card.appendChild(buildHallBody(data.hallucination));
 
-    // Wire toggles after DOM is built
     setTimeout(() => wireToggles(card), 0);
-
     return card;
   }
 
@@ -684,71 +586,52 @@
     return d;
   }
 
-  // ── Citations ──────────────────────────────────────────────────────
+  // ── Citations ────────────────────────────────────────────────────────
   function buildCitationsToggle(citations) {
-    const toggle = document.createElement('span');
-    toggle.className = 'citations-toggle';
-    toggle.dataset.target = 'citations';
-    toggle.innerHTML =
-      citations.length + ' source' + (citations.length !== 1 ? 's' : '') +
-      ' <span class="chevron">▾</span>';
-    return toggle;
+    const t = document.createElement('span');
+    t.className = 'citations-toggle';
+    t.dataset.target = 'citations';
+    t.innerHTML = citations.length + ' source' + (citations.length !== 1 ? 's' : '') + ' <span class="chevron">▾</span>';
+    return t;
   }
 
   function buildCitationsBody(citations) {
     const body = document.createElement('div');
     body.className = 'citations-body';
     body.dataset.role = 'citations';
-
     for (const c of citations) {
       const item = document.createElement('div');
       item.className = 'citation-item';
-
       const idx = document.createElement('span');
       idx.className = 'citation-index';
       idx.textContent = '[' + c.index + ']';
-
       const meta = document.createElement('div');
       meta.className = 'citation-meta';
-
       const src = document.createElement('span');
       src.className = 'citation-source';
       src.textContent = c.source_file + (c.page_number ? '  ·  p.' + c.page_number : '');
-
       const score = document.createElement('span');
       score.className = 'citation-score';
       score.textContent = 'similarity ' + c.similarity_score.toFixed(3);
-
       const excerpt = document.createElement('span');
       excerpt.className = 'citation-excerpt';
       excerpt.textContent = c.excerpt;
-
-      meta.appendChild(src);
-      meta.appendChild(score);
-      meta.appendChild(excerpt);
-      item.appendChild(idx);
-      item.appendChild(meta);
+      meta.append(src, score, excerpt);
+      item.append(idx, meta);
       body.appendChild(item);
     }
-
     return body;
   }
 
-  // ── Hallucination ──────────────────────────────────────────────────
-  function hallCls(score) {
-    return score >= 0.7 ? 'hall-consistent' : score >= 0.4 ? 'hall-check' : 'hall-flagged';
-  }
-  function hallLabel(score) {
-    return score >= 0.7 ? 'Consistent' : score >= 0.4 ? 'Check' : 'Flagged';
-  }
+  // ── Hallucination ─────────────────────────────────────────────────────
+  function hallCls(s)   { return s >= 0.7 ? 'hall-consistent' : s >= 0.4 ? 'hall-check' : 'hall-flagged'; }
+  function hallLabel(s) { return s >= 0.7 ? 'Consistent' : s >= 0.4 ? 'Check' : 'Flagged'; }
 
   function buildHallPill(h) {
     const pill = document.createElement('button');
     pill.className = 'hall-toggle ' + hallCls(h.overall_score);
     pill.dataset.target = 'hall';
-    pill.innerHTML =
-      hallLabel(h.overall_score) + ' ' + h.overall_score.toFixed(2) +
-      ' <span class="chevron">▾</span>';
+    pill.innerHTML = hallLabel(h.overall_score) + ' ' + h.overall_score.toFixed(2) + ' <span class="chevron">▾</span>';
     return pill;
   }
 
@@ -756,10 +639,8 @@
     const body = document.createElement('div');
     body.className = 'hall-body';
     body.dataset.role = 'hall';
-
     const inner = document.createElement('div');
     inner.className = 'hall-sentences';
-
     for (const ss of h.sentences) {
       const span = document.createElement('span');
       span.className = 'sent-span ' + (ss.score >= 0.7 ? 'sent-green' : ss.score >= 0.4 ? 'sent-yellow' : 'sent-red');
@@ -767,15 +648,13 @@
       span.textContent = ss.sentence + ' ';
       inner.appendChild(span);
     }
-
     body.appendChild(inner);
     return body;
   }
 
   function wireToggles(card) {
     card.querySelectorAll('[data-target]').forEach(toggle => {
-      const role = toggle.dataset.target;
-      const body = card.querySelector('[data-role="' + role + '"]');
+      const body = card.querySelector('[data-role="' + toggle.dataset.target + '"]');
       if (!body) return;
       toggle.addEventListener('click', () => {
         const open = body.classList.toggle('open');
@@ -784,13 +663,9 @@
     });
   }
 
-  // ── Markdown ───────────────────────────────────────────────────────
+  // ── Markdown ──────────────────────────────────────────────────────────
   function renderMarkdown(raw) {
-    let html = raw
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
+    let html = raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
     html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
@@ -798,22 +673,19 @@
     html = html.replace(/^[*\-] (.+)$/gm, '<li>$1</li>');
     html = html.replace(/(<li>.*<\/li>\n?)+/g, m => '<ul>' + m + '</ul>');
     html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
-
-    const paras = html.split(/\n{2,}/);
-    html = paras.map(p => {
+    return html.split(/\n{2,}/).map(p => {
       p = p.trim();
       if (!p) return '';
       if (/^<(h3|ul|ol|li)/.test(p)) return p;
       return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
     }).filter(Boolean).join('');
-
-    return html;
   }
 
-  // ── Upload ─────────────────────────────────────────────────────────
+  // ── Upload ─────────────────────────────────────────────────────────────
   async function uploadFiles(files) {
     if (!files || !files.length) return;
     setUploadStatus('Uploading…', '');
+    document.getElementById('upload-actions').classList.add('hidden');
 
     const fd = new FormData();
     for (const f of files) fd.append('files', f);
@@ -822,10 +694,9 @@
       const r = await fetch('/ingest', { method: 'POST', body: fd });
       const d = await r.json();
       if (r.ok) {
-        setUploadStatus(
-          '✓ ' + d.chunks_added + ' chunks added from ' + d.files_processed + ' file(s)',
-          'success'
-        );
+        setUploadStatus('✓ ' + d.chunks_added + ' chunks added from ' + d.files_processed + ' file(s)', 'success');
+        document.getElementById('drop-zone').style.display = 'none';
+        document.getElementById('upload-actions').classList.remove('hidden');
         await refreshHealth();
       } else {
         setUploadStatus(d.detail ?? 'Upload failed.', 'error');
@@ -841,20 +712,139 @@
     el.className = cls;
   }
 
-  // ── Modal ──────────────────────────────────────────────────────────
-  function openModal()  { document.getElementById('modal-overlay').classList.add('open'); setUploadStatus('', ''); }
-  function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+  // ── Upload modal ────────────────────────────────────────────────────────
+  function openUploadModal() {
+    resetUploadModal();
+    document.getElementById('upload-modal').classList.add('open');
+  }
 
-  document.getElementById('modal-overlay').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
+  function closeUploadModal() {
+    document.getElementById('upload-modal').classList.remove('open');
+  }
+
+  function resetUploadModal() {
+    setUploadStatus('', '');
+    document.getElementById('drop-zone').style.display = '';
+    document.getElementById('upload-actions').classList.add('hidden');
+    document.getElementById('file-input').value = '';
+  }
+
+  document.getElementById('upload-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeUploadModal();
   });
 
-  function onDragOver(e)  { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
-  function onDragLeave()  { document.getElementById('drop-zone').classList.remove('drag-over'); }
-  function onDrop(e)      { e.preventDefault(); document.getElementById('drop-zone').classList.remove('drag-over'); uploadFiles(e.dataTransfer.files); }
-  function onFileSelect(e){ uploadFiles(e.target.files); e.target.value = ''; }
+  function onDragOver(e)   { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
+  function onDragLeave()   { document.getElementById('drop-zone').classList.remove('drag-over'); }
+  function onDrop(e)       { e.preventDefault(); document.getElementById('drop-zone').classList.remove('drag-over'); uploadFiles(e.dataTransfer.files); }
+  function onFileSelect(e) { uploadFiles(e.target.files); e.target.value = ''; }
 
-  // ── Scroll ─────────────────────────────────────────────────────────
+  // ── Documents modal ─────────────────────────────────────────────────────
+  async function openDocsModal() {
+    document.getElementById('docs-modal').classList.add('open');
+    await loadDocuments();
+  }
+
+  function closeDocsModal() {
+    document.getElementById('docs-modal').classList.remove('open');
+  }
+
+  document.getElementById('docs-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeDocsModal();
+  });
+
+  async function loadDocuments() {
+    const list = document.getElementById('docs-list');
+    const errEl = document.getElementById('docs-error');
+    list.innerHTML = '<div class="docs-empty">Loading…</div>';
+    errEl.textContent = '';
+
+    try {
+      const r = await fetch('/documents');
+      const d = await r.json();
+      if (!r.ok) { errEl.textContent = d.detail ?? 'Failed to load documents.'; return; }
+      renderDocsList(d.documents);
+    } catch (_) {
+      errEl.textContent = 'Network error.';
+    }
+  }
+
+  function renderDocsList(docs) {
+    const list = document.getElementById('docs-list');
+    if (!docs.length) {
+      list.innerHTML = '<div class="docs-empty">No documents ingested yet.</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    for (const doc of docs) {
+      const item = document.createElement('div');
+      item.className = 'doc-item';
+      item.dataset.docId = doc.document_id;
+
+      const icon = document.createElement('div');
+      icon.className = 'doc-icon';
+      icon.textContent = '📄';
+
+      const info = document.createElement('div');
+      info.className = 'doc-info';
+
+      const name = document.createElement('div');
+      name.className = 'doc-name';
+      name.textContent = doc.source_file;
+      name.title = doc.source_file;
+
+      const meta = document.createElement('div');
+      meta.className = 'doc-meta';
+      meta.textContent = doc.chunk_count + ' chunks · ' + doc.page_count + ' page' + (doc.page_count !== 1 ? 's' : '');
+
+      info.append(name, meta);
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'doc-delete';
+      delBtn.textContent = 'Delete';
+      delBtn.onclick = () => deleteDocument(doc.document_id, doc.source_file, item, delBtn);
+
+      item.append(icon, info, delBtn);
+      list.appendChild(item);
+    }
+  }
+
+  async function deleteDocument(docId, fileName, itemEl, btn) {
+    if (!confirm('Delete "' + fileName + '"? This cannot be undone.')) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Deleting…';
+
+    const errEl = document.getElementById('docs-error');
+    errEl.textContent = '';
+
+    try {
+      const r = await fetch('/documents/' + encodeURIComponent(docId), { method: 'DELETE' });
+      const d = await r.json();
+      if (r.ok) {
+        itemEl.style.opacity = '0';
+        itemEl.style.transition = 'opacity 200ms';
+        setTimeout(() => {
+          itemEl.remove();
+          const list = document.getElementById('docs-list');
+          if (!list.children.length) {
+            list.innerHTML = '<div class="docs-empty">No documents ingested yet.</div>';
+          }
+        }, 200);
+        await refreshHealth();
+      } else {
+        errEl.textContent = d.detail ?? 'Delete failed.';
+        btn.disabled = false;
+        btn.textContent = 'Delete';
+      }
+    } catch (_) {
+      errEl.textContent = 'Network error.';
+      btn.disabled = false;
+      btn.textContent = 'Delete';
+    }
+  }
+
+  // ── Utilities ─────────────────────────────────────────────────────────
   function scrollToBottom() {
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   }

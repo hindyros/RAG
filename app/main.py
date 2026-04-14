@@ -20,7 +20,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.routes import health, ingest, query
+from app.api.routes import documents, health, ingest, query
 from app.config import get_settings
 from app.hallucination.checker import HallucinationChecker
 from app.llm.client import MistralClient
@@ -104,6 +104,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router, tags=["Health"])
     app.include_router(ingest.router, tags=["Ingestion"])
     app.include_router(query.router, tags=["Query"])
+    app.include_router(documents.router, tags=["Documents"])
 
     # ── Static files (UI) — must be mounted LAST so API routes take priority ──
     app.mount("/", StaticFiles(directory="app/static", html=True), name="static")

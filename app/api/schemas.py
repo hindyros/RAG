@@ -89,6 +89,27 @@ class QueryResponse(BaseModel):
     hallucination: Optional[HallucinationResult] = None
 
 
+# ── Documents ────────────────────────────────────────────────────────────────
+
+class DocumentInfo(BaseModel):
+    document_id: str
+    source_file: str
+    chunk_count: int
+    page_count: int
+
+
+class DocumentListResponse(BaseModel):
+    documents: list[DocumentInfo]
+    total_documents: int
+    total_chunks: int
+
+
+class DeleteDocumentResponse(BaseModel):
+    message: str
+    chunks_removed: int
+    total_chunks_in_store: int
+
+
 # ── Health ───────────────────────────────────────────────────────────────────
 
 class HealthResponse(BaseModel):

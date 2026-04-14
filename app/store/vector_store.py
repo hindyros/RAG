@@ -205,3 +205,58 @@ class VectorStore:
     def already_ingested(self, filename: str) -> bool:
         """Check if a file has already been indexed (to avoid duplicates)."""
         return filename in self._source_files
+
+    def list_documents(self) -> list[dict]:
+        """
+        Return one summary dict per unique document_id.
+
+        Keys: document_id, source_file, chunk_count, page_count.
+        """
+        seen: dict[str, dict] = {}
+        for meta in self._metadata:
+            if meta.document_id not in seen:
+                seen[meta.document_id] = {
+                    "document_id": meta.document_id,
+                    "source_file": meta.source_file,
+                    "chunk_count": 0,
+                    "page_count": 0,
+                    "pages": set(),
+                }
+            seen[meta.document_id]["chunk_count"] += 1
+            seen[meta.document_id]["pages"].add(meta.page_number)
+
+        result = []
+        for doc in seen.values():
+            doc["page_count"] = len(doc.pop("pages"))
+            result.append(doc)
+        return result
+
+    def delete_document(self, document_id: str) -> int:
+        """
+        Remove all chunks belonging to *document_id* from all three indexes.
+
+        Returns the number of chunks removed, or raises ValueError if the
+        document_id is not found.
+        """
+        indices = [
+            i for i, m in enumerate(self._metadata)
+            if m.document_id == document_id
+        ]
+        if not indices:
+            raise ValueError(f"document_id '{document_id}' not found in store")
+
+        # Remove from all three parallel structures
+        self._cosine.remove_rows(indices)
+        self._bm25.remove_documents(indices)
+
+        # Rebuild source_files from remaining metadata
+        removed_file = self._metadata[indices[0]].source_file
+        remove_set = set(indices)
+        self._metadata = [m for i, m in enumerate(self._metadata) if i not in remove_set]
+        self._source_files = {m.source_file for m in self._metadata}
+
+        logger.info(
+            "Deleted document '%s' (id=%s): %d chunks removed. Store total: %d.",
+            removed_file, document_id, len(indices), len(self._metadata),
+        )
+        return len(indices)
