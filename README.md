@@ -6,14 +6,14 @@ A production-grade Retrieval-Augmented Generation (RAG) backend built with FastA
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                          Lovable UI                                 │
+│                     Built-in Dark UI (/ static)                     │
 └────────────────────────┬────────────────────────────────────────────┘
                          │ HTTP
           ┌──────────────▼──────────────┐
           │        FastAPI Backend       │
           │                              │
           │  POST /ingest   POST /query  │
-          │  GET  /health               │
+          │  GET  /health   GET  /      │
           └──────┬───────────┬──────────┘
                  │           │
     ┌────────────▼──┐   ┌────▼──────────────────────────────────┐
@@ -42,7 +42,12 @@ A production-grade Retrieval-Augmented Generation (RAG) backend built with FastA
     │  ──────────── │   │                                        │
     │  Persist:      │   │  7. Generation (mistral-large)         │
     │  .npz + .json  │   │     Answer + inline [N] citations      │
-    └────────────────┘   └────────────────────────────────────────┘
+    └────────────────┘   │                                        │
+                         │  8. Hallucination Detection            │
+                         │     vectara/hallucination_evaluation   │
+                         │     Per-sentence score (0–1)           │
+                         │     overall = min(sentence scores)     │
+                         └────────────────────────────────────────┘
 ```
 
 ## Key Features
@@ -61,6 +66,8 @@ A production-grade Retrieval-Augmented Generation (RAG) backend built with FastA
 | Intent detection | Mistral JSON mode — 2-level classification |
 | Answer shaping | 4 templates: factual / list / comparison / table |
 | Citation gate | Cosine threshold refusal ("insufficient evidence") |
+| Hallucination detection | `vectara/hallucination_evaluation_model` — per-sentence NLI scoring |
+| Dark UI | Single-file vanilla JS frontend served from FastAPI (`/`) |
 
 ## Project Structure
 
@@ -94,6 +101,10 @@ app/
 │       ├── hyde.py
 │       ├── rerank.py
 │       └── answer/      # factual / list / comparison / table
+├── hallucination/
+│   └── checker.py       # HallucinationChecker (vectara model)
+├── static/
+│   └── index.html       # Dark UI — single self-contained file
 ├── intent/
 │   └── detector.py      # Intent classification
 └── query/
@@ -125,7 +136,10 @@ uvicorn app.main:app --reload --port 8000
 ```
 
 The API is now available at `http://localhost:8000`.
+The UI is served at `http://localhost:8000` (open in a browser).
 Interactive docs: `http://localhost:8000/docs`
+
+> **Note:** First startup downloads the Vectara hallucination model (~300 MB) to `~/.cache/huggingface`.
 
 ### 4. Ingest PDFs
 
@@ -194,7 +208,15 @@ pytest tests/ -v
     "reasoning": "Asks for a definition of a specific concept."
   },
   "refused": false,
-  "refusal_reason": null
+  "refusal_reason": null,
+  "grounded": true,
+  "hallucination": {
+    "overall_score": 0.82,
+    "consistent": true,
+    "sentences": [
+      { "sentence": "The transformer architecture uses self-attention...", "score": 0.82, "flagged": false }
+    ]
+  }
 }
 ```
 
@@ -245,6 +267,9 @@ All settings are read from `.env` (see `.env.example`):
 | pydantic-settings | Configuration | https://docs.pydantic.dev/latest/concepts/pydantic_settings/ |
 | python-dotenv | .env loading | https://github.com/theskumar/python-dotenv |
 | python-multipart | File uploads | https://github.com/Kludex/python-multipart |
+| PyTorch | Hallucination model inference | https://pytorch.org |
+| Transformers | Load vectara/hallucination_evaluation_model | https://huggingface.co/docs/transformers |
+| sentencepiece | Tokenizer for the hallucination model | https://github.com/google/sentencepiece |
 
 **No external vector database.  No external search library.  All retrieval logic is implemented from scratch using NumPy.**
 
