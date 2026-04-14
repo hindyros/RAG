@@ -29,6 +29,7 @@ Each step is a separate function/class so it can be tested, swapped, or
 instrumented independently.
 """
 
+import asyncio
 import logging
 import textwrap
 
@@ -42,6 +43,7 @@ from app.api.schemas import (
     SubIntent,
 )
 from app.config import Settings
+from app.hallucination.checker import HallucinationChecker
 from app.intent.detector import IntentDetector
 from app.llm.client import MistralClient
 from app.llm.prompts.answer import comparison, conversational, factual, list_format, table
@@ -67,10 +69,12 @@ class QueryPipeline:
         store: VectorStore,
         client: MistralClient,
         settings: Settings,
+        checker: HallucinationChecker | None = None,
     ) -> None:
         self._store = store
         self._client = client
         self._settings = settings
+        self._checker = checker
         self._intent_detector = IntentDetector(client, settings)
         self._hyde = HyDETransformer(client)
         self._reranker = Reranker(client)
@@ -158,12 +162,23 @@ class QueryPipeline:
             max_tokens=1500,
         )
 
+        hallucination_result = None
+        if self._checker is not None:
+            chunk_texts = [pc["text"] for pc in prompt_chunks]
+            try:
+                hallucination_result = await asyncio.to_thread(
+                    self._checker.check, answer, chunk_texts
+                )
+            except Exception:
+                logger.exception("Hallucination check failed — skipping.")
+
         return QueryResponse(
             answer=answer,
             citations=citations,
             intent=intent,
             refused=False,
-            grounded=True,  # answer was built from retrieved document chunks
+            grounded=True,
+            hallucination=hallucination_result,
         )
 
     # ── Private helpers ───────────────────────────────────────────────────────

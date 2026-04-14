@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f0f;
+      --surface: #161616;
+      --text: #c8c5be;
+      --muted: #7a7773;
+      --accent: #575ECF;
+      --accent-dim: rgba(87, 94, 207, 0.15);
+      --border: rgba(255, 255, 255, 0.07);
+      --green: #4caf82;
+      --yellow: #d4a017;
+      --red: #c95f5f;
+      --ease: cubic-bezier(0.16, 1, 0.32, 1);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────────── */
+    #header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+    }
+
+    #logo {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #doc-badge {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 2px 8px;
+    }
+
+    #upload-btn {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: background 200ms var(--ease), border-color 200ms var(--ease);
+    }
+    #upload-btn:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.14);
+    }
+
+    /* ── Messages ───────────────────────────────────────────────────────── */
+    #messages {
+      margin: 48px 0 64px;
+      padding: 24px 20px;
+      max-width: 760px;
+      margin-left: auto;
+      margin-right: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* User bubble */
+    .msg-user {
+      align-self: flex-end;
+      max-width: 72%;
+      background: var(--accent-dim);
+      border: 1px solid rgba(87, 94, 207, 0.3);
+      border-radius: 18px 18px 4px 18px;
+      padding: 10px 14px;
+      color: var(--text);
+      word-break: break-word;
+    }
+
+    /* Assistant card */
+    .msg-assistant {
+      align-self: flex-start;
+      max-width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px 18px 18px 18px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .answer-text { color: var(--text); }
+    .answer-text strong { color: #e0ddd6; }
+    .answer-text h3 { font-size: 13px; font-weight: 600; color: #e0ddd6; margin-bottom: 4px; }
+    .answer-text ul, .answer-text ol { padding-left: 20px; }
+    .answer-text sup { font-size: 10px; color: var(--accent); font-weight: 600; }
+    .answer-text p + p { margin-top: 8px; }
+
+    /* Badges row */
+    .badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge-sourced {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--green);
+      background: rgba(76,175,130,0.1);
+      border: 1px solid rgba(76,175,130,0.2);
+      border-radius: 99px;
+      padding: 2px 8px;
+    }
+    .badge-general {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      background: rgba(122,119,115,0.1);
+      border: 1px solid rgba(122,119,115,0.2);
+      border-radius: 99px;
+      padding: 2px 8px;
+    }
+
+    /* Citations */
+    .citations-toggle {
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .citations-toggle:hover { color: var(--text); }
+    .citations-toggle .chevron {
+      display: inline-block;
+      transition: transform 200ms var(--ease);
+    }
+    .citations-toggle.open .chevron { transform: rotate(180deg); }
+
+    .citations-body {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 300ms var(--ease);
+    }
+    .citations-body.open { max-height: 2000px; }
+
+    .citation-item {
+      font-size: 12px;
+      color: var(--muted);
+      padding: 6px 0;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+    }
+    .citation-index {
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .citation-meta { display: flex; flex-direction: column; gap: 2px; }
+    .citation-source { color: var(--text); font-weight: 500; }
+    .citation-excerpt { color: var(--muted); font-style: italic; }
+
+    /* Hallucination indicator */
+    .hall-toggle {
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 99px;
+      padding: 3px 10px;
+      border: 1px solid;
+      transition: opacity 200ms;
+    }
+    .hall-toggle:hover { opacity: 0.8; }
+    .hall-toggle .chevron {
+      display: inline-block;
+      transition: transform 200ms var(--ease);
+      font-size: 10px;
+    }
+    .hall-toggle.open .chevron { transform: rotate(180deg); }
+
+    .hall-consistent {
+      color: var(--green);
+      background: rgba(76,175,130,0.08);
+      border-color: rgba(76,175,130,0.2);
+    }
+    .hall-check {
+      color: var(--yellow);
+      background: rgba(212,160,23,0.08);
+      border-color: rgba(212,160,23,0.2);
+    }
+    .hall-flagged {
+      color: var(--red);
+      background: rgba(201,95,95,0.08);
+      border-color: rgba(201,95,95,0.2);
+    }
+
+    .hall-body {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 350ms var(--ease);
+    }
+    .hall-body.open { max-height: 2000px; }
+
+    .hall-sentences {
+      font-size: 13px;
+      line-height: 1.7;
+      padding-top: 8px;
+    }
+
+    .sent-span {
+      border-radius: 3px;
+      padding: 1px 2px;
+      cursor: default;
+    }
+    .sent-green  { background: rgba(76,175,130,0.15); }
+    .sent-yellow { background: rgba(212,160,23,0.18); }
+    .sent-red    { background: rgba(201,95,95,0.18); }
+
+    /* Loading skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface) 25%, rgba(255,255,255,0.04) 50%, var(--surface) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 4px;
+      height: 14px;
+    }
+    .skeleton + .skeleton { margin-top: 8px; }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── Input bar ──────────────────────────────────────────────────────── */
+    #input-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 10px;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      z-index: 100;
+    }
+
+    #question-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 14px;
+      outline: none;
+      resize: none;
+      transition: border-color 200ms var(--ease);
+    }
+    #question-input::placeholder { color: var(--muted); }
+    #question-input:focus { border-color: rgba(87, 94, 207, 0.5); }
+
+    #send-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 200ms var(--ease);
+      flex-shrink: 0;
+    }
+    #send-btn:hover:not(:disabled) { opacity: 0.85; }
+    #send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Upload modal ───────────────────────────────────────────────────── */
+    #modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    #modal-overlay.open { display: flex; }
+
+    #modal-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      width: min(440px, 92vw);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    #modal-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    #drop-zone {
+      border: 1.5px dashed var(--border);
+      border-radius: 8px;
+      padding: 36px 24px;
+      text-align: center;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color 200ms var(--ease), background 200ms var(--ease);
+    }
+    #drop-zone.drag-over {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    #file-input { display: none; }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .btn-ghost {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 6px;
+      padding: 7px 14px;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      transition: color 200ms;
+    }
+    .btn-ghost:hover { color: var(--text); }
+
+    #upload-status {
+      font-size: 12px;
+      color: var(--muted);
+      min-height: 18px;
+    }
+    #upload-status.success { color: var(--green); }
+    #upload-status.error   { color: var(--red); }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────── -->
+<header id="header">
+  <div id="logo">
+    RAG
+    <span id="doc-badge">0 docs</span>
+  </div>
+  <button id="upload-btn" onclick="openModal()">Upload ⊕</button>
+</header>
+
+<!-- ── Messages ────────────────────────────────────────────────────────── -->
+<div id="messages"></div>
+
+<!-- ── Input bar ───────────────────────────────────────────────────────── -->
+<div id="input-bar">
+  <textarea
+    id="question-input"
+    rows="1"
+    placeholder="Ask a question…"
+    onkeydown="handleKey(event)"
+  ></textarea>
+  <button id="send-btn" onclick="sendQuery()">Send</button>
+</div>
+
+<!-- ── Upload modal ─────────────────────────────────────────────────────── -->
+<div id="modal-overlay" role="dialog" aria-modal="true">
+  <div id="modal-card">
+    <div id="modal-title">Upload documents</div>
+    <div
+      id="drop-zone"
+      onclick="document.getElementById('file-input').click()"
+      ondragover="onDragOver(event)"
+      ondragleave="onDragLeave(event)"
+      ondrop="onDrop(event)"
+    >
+      Drag &amp; drop PDF files here, or click to select
+    </div>
+    <input id="file-input" type="file" multiple accept=".pdf" onchange="onFileSelect(event)" />
+    <div id="upload-status"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── State ─────────────────────────────────────────────────────────────────
+  const state = { documentCount: 0, isLoading: false };
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  async function init() {
+    await refreshHealth();
+
+    document.getElementById('question-input').addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+  }
+
+  async function refreshHealth() {
+    try {
+      const r = await fetch('/health');
+      if (!r.ok) return;
+      const data = await r.json();
+      state.documentCount = data.total_documents ?? 0;
+      document.getElementById('doc-badge').textContent =
+        state.documentCount + (state.documentCount === 1 ? ' doc' : ' docs');
+    } catch (_) {}
+  }
+
+  // ── Query ─────────────────────────────────────────────────────────────────
+  async function sendQuery() {
+    const input = document.getElementById('question-input');
+    const question = input.value.trim();
+    if (!question || state.isLoading) return;
+
+    state.isLoading = true;
+    const sendBtn = document.getElementById('send-btn');
+    sendBtn.disabled = true;
+
+    input.value = '';
+    input.style.height = 'auto';
+
+    appendUserMessage(question);
+    const placeholder = appendLoadingMessage();
+
+    try {
+      const r = await fetch('/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question }),
+      });
+      const data = await r.json();
+      placeholder.replaceWith(buildAssistantCard(data));
+    } catch (err) {
+      placeholder.replaceWith(buildAssistantCard({
+        answer: 'Something went wrong. Please try again.',
+        grounded: false,
+        citations: [],
+        hallucination: null,
+      }));
+    } finally {
+      state.isLoading = false;
+      sendBtn.disabled = false;
+      scrollToBottom();
+    }
+  }
+
+  function handleKey(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      sendQuery();
+    }
+  }
+
+  // ── Message builders ──────────────────────────────────────────────────────
+  function appendUserMessage(text) {
+    const el = document.createElement('div');
+    el.className = 'msg-user';
+    el.textContent = text;
+    document.getElementById('messages').appendChild(el);
+    scrollToBottom();
+    return el;
+  }
+
+  function appendLoadingMessage() {
+    const card = document.createElement('div');
+    card.className = 'msg-assistant';
+    for (let i = 0; i < 3; i++) {
+      const sk = document.createElement('div');
+      sk.className = 'skeleton';
+      sk.style.width = i === 2 ? '55%' : '100%';
+      card.appendChild(sk);
+    }
+    document.getElementById('messages').appendChild(card);
+    scrollToBottom();
+    return card;
+  }
+
+  function buildAssistantCard(data) {
+    const card = document.createElement('div');
+    card.className = 'msg-assistant';
+
+    // Answer text
+    const answerEl = document.createElement('div');
+    answerEl.className = 'answer-text';
+    answerEl.innerHTML = renderMarkdown(data.answer ?? '');
+    card.appendChild(answerEl);
+
+    // Badges row
+    const badges = document.createElement('div');
+    badges.className = 'badges';
+
+    const sourcedBadge = document.createElement('span');
+    if (data.grounded) {
+      sourcedBadge.className = 'badge-sourced';
+      sourcedBadge.textContent = '● sourced';
+    } else {
+      sourcedBadge.className = 'badge-general';
+      sourcedBadge.textContent = '◌ general';
+    }
+    badges.appendChild(sourcedBadge);
+
+    // Hallucination pill (grounded answers with result)
+    if (data.grounded && data.hallucination) {
+      badges.appendChild(buildHallucinationToggle(data));
+    }
+
+    card.appendChild(badges);
+
+    // Citations (collapsible)
+    if (data.citations && data.citations.length > 0) {
+      card.appendChild(buildCitations(data.citations));
+    }
+
+    // Hallucination sentence breakdown
+    if (data.grounded && data.hallucination) {
+      card.appendChild(buildHallucinationBody(data.hallucination, data.answer));
+    }
+
+    return card;
+  }
+
+  // ── Hallucination UI ──────────────────────────────────────────────────────
+  function hallClass(score) {
+    if (score >= 0.7) return 'hall-consistent';
+    if (score >= 0.4) return 'hall-check';
+    return 'hall-flagged';
+  }
+
+  function hallLabel(score) {
+    if (score >= 0.7) return 'Consistent';
+    if (score >= 0.4) return 'Check';
+    return 'Flagged';
+  }
+
+  function buildHallucinationToggle(data) {
+    const h = data.hallucination;
+    const scoreStr = h.overall_score.toFixed(2);
+    const cls = hallClass(h.overall_score);
+
+    const toggle = document.createElement('button');
+    toggle.className = 'hall-toggle ' + cls;
+    toggle.setAttribute('aria-expanded', 'false');
+
+    const label = document.createElement('span');
+    label.textContent = hallLabel(h.overall_score) + ' ' + scoreStr;
+
+    const chevron = document.createElement('span');
+    chevron.className = 'chevron';
+    chevron.textContent = '▾';
+
+    toggle.appendChild(label);
+    toggle.appendChild(chevron);
+
+    toggle.addEventListener('click', () => {
+      const bodyId = toggle.dataset.bodyId;
+      const body = document.getElementById(bodyId);
+      if (!body) return;
+      const isOpen = body.classList.contains('open');
+      body.classList.toggle('open', !isOpen);
+      toggle.classList.toggle('open', !isOpen);
+      toggle.setAttribute('aria-expanded', String(!isOpen));
+    });
+
+    // ID is assigned after body is created; we set it here and patch below
+    const uid = 'hall-' + Math.random().toString(36).slice(2);
+    toggle.dataset.bodyId = uid;
+    toggle._uid = uid;
+
+    return toggle;
+  }
+
+  function buildHallucinationBody(hallucination, answer) {
+    const body = document.createElement('div');
+    body.className = 'hall-body';
+
+    // Find the toggle that owns this body (last button in parent with hall-toggle class)
+    // We assign the id lazily after insertion
+    const inner = document.createElement('div');
+    inner.className = 'hall-sentences';
+
+    for (const ss of hallucination.sentences) {
+      const span = document.createElement('span');
+      span.className = 'sent-span ' + (ss.score >= 0.7 ? 'sent-green' : ss.score >= 0.4 ? 'sent-yellow' : 'sent-red');
+      span.title = 'Score: ' + ss.score.toFixed(2);
+      span.textContent = ss.sentence + ' ';
+      inner.appendChild(span);
+    }
+
+    body.appendChild(inner);
+
+    // Tag with id after append — the toggle stores expected id
+    setTimeout(() => {
+      // Walk up to find toggle in same card
+      const card = body.closest('.msg-assistant');
+      if (!card) return;
+      const toggle = card.querySelector('.hall-toggle');
+      if (toggle && toggle._uid) {
+        body.id = toggle._uid;
+      }
+    }, 0);
+
+    return body;
+  }
+
+  // ── Citations ─────────────────────────────────────────────────────────────
+  function buildCitations(citations) {
+    const wrapper = document.createElement('div');
+
+    const toggle = document.createElement('span');
+    toggle.className = 'citations-toggle';
+    toggle.innerHTML = citations.length + ' source' + (citations.length > 1 ? 's' : '') +
+      ' <span class="chevron">▾</span>';
+
+    const body = document.createElement('div');
+    body.className = 'citations-body';
+
+    toggle.addEventListener('click', () => {
+      const open = body.classList.toggle('open');
+      toggle.classList.toggle('open', open);
+    });
+
+    for (const c of citations) {
+      const item = document.createElement('div');
+      item.className = 'citation-item';
+
+      const idx = document.createElement('span');
+      idx.className = 'citation-index';
+      idx.textContent = '[' + c.index + ']';
+
+      const meta = document.createElement('div');
+      meta.className = 'citation-meta';
+
+      const src = document.createElement('span');
+      src.className = 'citation-source';
+      src.textContent = c.source_file + (c.page_number ? ' · p.' + c.page_number : '');
+
+      const excerpt = document.createElement('span');
+      excerpt.className = 'citation-excerpt';
+      excerpt.textContent = c.excerpt;
+
+      meta.appendChild(src);
+      meta.appendChild(excerpt);
+      item.appendChild(idx);
+      item.appendChild(meta);
+      body.appendChild(item);
+    }
+
+    wrapper.appendChild(toggle);
+    wrapper.appendChild(body);
+    return wrapper;
+  }
+
+  // ── Markdown renderer ─────────────────────────────────────────────────────
+  function renderMarkdown(raw) {
+    // 1. HTML-escape first (XSS safety)
+    let html = raw
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // 2. Apply transforms
+    // Headers
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+
+    // Bold
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    // Citation markers [N]
+    html = html.replace(/\[(\d+)\]/g, '<sup>[$1]</sup>');
+
+    // Bullet lists
+    html = html.replace(/^[*-] (.+)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+
+    // Numbered lists
+    html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+
+    // Line breaks → paragraphs (double newline)
+    const paras = html.split(/\n{2,}/);
+    html = paras.map(p => {
+      p = p.trim();
+      if (!p) return '';
+      if (p.startsWith('<h3>') || p.startsWith('<ul>') || p.startsWith('<ol>')) return p;
+      return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
+    }).filter(Boolean).join('');
+
+    return html;
+  }
+
+  // ── Upload ────────────────────────────────────────────────────────────────
+  async function uploadFiles(files) {
+    if (!files || files.length === 0) return;
+
+    setUploadStatus('Uploading…', '');
+    const fd = new FormData();
+    for (const f of files) fd.append('files', f);
+
+    try {
+      const r = await fetch('/ingest', { method: 'POST', body: fd });
+      const data = await r.json();
+      if (r.ok) {
+        setUploadStatus(
+          data.chunks_added + ' chunks added from ' + data.files_processed + ' file(s)',
+          'success'
+        );
+        await refreshHealth();
+      } else {
+        setUploadStatus(data.detail ?? 'Upload failed.', 'error');
+      }
+    } catch (err) {
+      setUploadStatus('Network error.', 'error');
+    }
+  }
+
+  function setUploadStatus(msg, cls) {
+    const el = document.getElementById('upload-status');
+    el.textContent = msg;
+    el.className = cls;
+  }
+
+  // ── Modal ─────────────────────────────────────────────────────────────────
+  function openModal() {
+    document.getElementById('modal-overlay').classList.add('open');
+    setUploadStatus('', '');
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+
+  document.getElementById('modal-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  function onDragOver(e) {
+    e.preventDefault();
+    document.getElementById('drop-zone').classList.add('drag-over');
+  }
+  function onDragLeave() {
+    document.getElementById('drop-zone').classList.remove('drag-over');
+  }
+  function onDrop(e) {
+    e.preventDefault();
+    document.getElementById('drop-zone').classList.remove('drag-over');
+    uploadFiles(e.dataTransfer.files);
+  }
+  function onFileSelect(e) {
+    uploadFiles(e.target.files);
+    e.target.value = '';
+  }
+
+  // ── Utilities ─────────────────────────────────────────────────────────────
+  function scrollToBottom() {
+    const area = document.getElementById('messages');
+    area.scrollTo({ top: area.scrollHeight, behavior: 'smooth' });
+    // Also scroll the window
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  }
+
+  // ── Boot ──────────────────────────────────────────────────────────────────
+  init();
+</script>
+</body>
+</html>

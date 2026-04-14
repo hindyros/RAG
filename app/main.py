@@ -18,9 +18,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import health, ingest, query
 from app.config import get_settings
+from app.hallucination.checker import HallucinationChecker
 from app.llm.client import MistralClient
 from app.query.pipeline import QueryPipeline
 from app.store.vector_store import VectorStore
@@ -54,11 +56,13 @@ async def lifespan(app: FastAPI):
 
     client = MistralClient(settings=settings)
 
-    pipeline = QueryPipeline(store=store, client=client, settings=settings)
+    checker = HallucinationChecker()
+    pipeline = QueryPipeline(store=store, client=client, settings=settings, checker=checker)
 
     # Attach to app.state so route handlers can access via Depends()
     app.state.vector_store = store
     app.state.mistral_client = client
+    app.state.hallucination_checker = checker
     app.state.query_pipeline = pipeline
 
     logger.info(
@@ -100,6 +104,9 @@ def create_app() -> FastAPI:
     app.include_router(health.router, tags=["Health"])
     app.include_router(ingest.router, tags=["Ingestion"])
     app.include_router(query.router, tags=["Query"])
+
+    # ── Static files (UI) — must be mounted LAST so API routes take priority ──
+    app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
 
     return app
 

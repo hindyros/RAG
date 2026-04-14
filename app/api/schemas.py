@@ -46,6 +46,20 @@ class Citation(BaseModel):
     excerpt: str            # short snippet for UI display
 
 
+# ── Hallucination detection ──────────────────────────────────────────────────
+
+class SentenceScore(BaseModel):
+    sentence: str
+    score: float = Field(ge=0.0, le=1.0)
+    flagged: bool          # True when score < 0.5
+
+
+class HallucinationResult(BaseModel):
+    overall_score: float = Field(ge=0.0, le=1.0)   # minimum sentence score (conservative)
+    consistent: bool                                 # overall_score >= 0.5
+    sentences: list[SentenceScore]
+
+
 # ── Ingestion ────────────────────────────────────────────────────────────────
 
 class IngestResponse(BaseModel):
@@ -72,6 +86,7 @@ class QueryResponse(BaseModel):
     # grounded=True  → answer was built from retrieved document chunks
     # grounded=False → conversational reply, refusal, or empty-store fallback
     # Intended for the UI to show a "sourced from documents" indicator
+    hallucination: Optional[HallucinationResult] = None
 
 
 # ── Health ───────────────────────────────────────────────────────────────────

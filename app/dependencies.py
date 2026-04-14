@@ -15,6 +15,7 @@ making them testable by simply setting app.state.{name} in test setup.
 from fastapi import Depends, Request
 
 from app.config import Settings, get_settings
+from app.hallucination.checker import HallucinationChecker
 from app.llm.client import MistralClient
 from app.query.pipeline import QueryPipeline
 from app.store.vector_store import VectorStore
@@ -30,3 +31,7 @@ def get_mistral_client(request: Request) -> MistralClient:
 
 def get_query_pipeline(request: Request) -> QueryPipeline:
     return request.app.state.query_pipeline
+
+
+def get_hallucination_checker(request: Request) -> HallucinationChecker:
+    return request.app.state.hallucination_checker
