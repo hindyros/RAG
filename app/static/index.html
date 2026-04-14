@@ -4,168 +4,232 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RAG</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0f0f0f;
-      --surface: #161616;
-      --text: #c8c5be;
-      --muted: #7a7773;
-      --accent: #575ECF;
-      --accent-dim: rgba(87, 94, 207, 0.15);
-      --border: rgba(255, 255, 255, 0.07);
-      --green: #4caf82;
-      --yellow: #d4a017;
-      --red: #c95f5f;
-      --ease: cubic-bezier(0.16, 1, 0.32, 1);
+      --bg:         #1b1b1b;
+      --surface:    #222222;
+      --surface-2:  #2a2a2a;
+      --text:       #c5c1b9;
+      --text-bright:#dcdad5;
+      --muted:      #6e6b65;
+      --accent:     #575ECF;
+      --accent-dim: rgba(87, 94, 207, 0.12);
+      --border:     rgba(255, 255, 255, 0.06);
+      --border-mid: rgba(255, 255, 255, 0.10);
+      --green:      #4caf82;
+      --yellow:     #c9921a;
+      --red:        #c05555;
+      --ease:       cubic-bezier(0.16, 1, 0.32, 1);
+      --font:       -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
     html, body {
       height: 100%;
       background: var(--bg);
       color: var(--text);
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 14px;
-      line-height: 1.6;
+      font-family: var(--font);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Header ─────────────────────────────────────────────────────────── */
+    /* ── Header ──────────────────────────────────────────────────── */
     #header {
       position: fixed;
       top: 0; left: 0; right: 0;
-      height: 48px;
+      height: 56px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 20px;
-      background: var(--bg);
+      padding: 0 28px;
+      background: rgba(27, 27, 27, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
       z-index: 100;
     }
 
     #logo {
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-      color: var(--text);
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      color: var(--text-bright);
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     #doc-badge {
-      font-size: 11px;
-      font-weight: 500;
+      font-size: 12px;
+      font-weight: 400;
       color: var(--muted);
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 99px;
-      padding: 2px 8px;
+      padding: 3px 10px;
+      letter-spacing: 0.01em;
     }
 
     #upload-btn {
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 14px;
+      font-weight: 400;
       color: var(--text);
       background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 5px 12px;
+      border: 1px solid var(--border-mid);
+      border-radius: 8px;
+      padding: 7px 16px;
       cursor: pointer;
-      transition: background 200ms var(--ease), border-color 200ms var(--ease);
+      transition: background 150ms var(--ease), border-color 150ms var(--ease), color 150ms;
+      letter-spacing: 0.01em;
     }
     #upload-btn:hover {
-      background: rgba(255,255,255,0.06);
-      border-color: rgba(255,255,255,0.14);
+      background: var(--surface-2);
+      border-color: rgba(255,255,255,0.16);
+      color: var(--text-bright);
     }
+    #upload-btn:active { transform: scale(0.98); }
 
-    /* ── Messages ───────────────────────────────────────────────────────── */
+    /* ── Messages ─────────────────────────────────────────────────── */
     #messages {
-      margin: 48px 0 64px;
-      padding: 24px 20px;
-      max-width: 760px;
-      margin-left: auto;
-      margin-right: auto;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 80px 28px 100px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 20px;
+    }
+
+    /* Empty state */
+    #empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 180px);
+      gap: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+    #empty-state .empty-title {
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    #empty-state .empty-sub {
+      font-size: 15px;
+      color: var(--muted);
+      max-width: 360px;
+      line-height: 1.6;
     }
 
     /* User bubble */
     .msg-user {
       align-self: flex-end;
-      max-width: 72%;
+      max-width: 68%;
       background: var(--accent-dim);
-      border: 1px solid rgba(87, 94, 207, 0.3);
-      border-radius: 18px 18px 4px 18px;
-      padding: 10px 14px;
-      color: var(--text);
+      border: 1px solid rgba(87, 94, 207, 0.22);
+      border-radius: 20px 20px 5px 20px;
+      padding: 12px 18px;
+      color: var(--text-bright);
+      font-size: 15px;
+      line-height: 1.6;
       word-break: break-word;
     }
 
     /* Assistant card */
     .msg-assistant {
       align-self: flex-start;
-      max-width: 100%;
+      width: 100%;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 4px 18px 18px 18px;
-      padding: 14px 16px;
+      border-radius: 5px 20px 20px 20px;
+      padding: 20px 22px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 14px;
     }
 
-    .answer-text { color: var(--text); }
-    .answer-text strong { color: #e0ddd6; }
-    .answer-text h3 { font-size: 13px; font-weight: 600; color: #e0ddd6; margin-bottom: 4px; }
-    .answer-text ul, .answer-text ol { padding-left: 20px; }
-    .answer-text sup { font-size: 10px; color: var(--accent); font-weight: 600; }
-    .answer-text p + p { margin-top: 8px; }
+    .answer-text {
+      color: var(--text-bright);
+      font-size: 15px;
+      line-height: 1.75;
+    }
+    .answer-text strong { color: #e8e5de; font-weight: 600; }
+    .answer-text h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-bright);
+      margin: 12px 0 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .answer-text ul, .answer-text ol {
+      padding-left: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .answer-text li { color: var(--text); }
+    .answer-text sup {
+      font-size: 10px;
+      color: var(--accent);
+      font-weight: 600;
+      vertical-align: super;
+      line-height: 0;
+    }
+    .answer-text p + p { margin-top: 10px; }
 
-    /* Badges row */
-    .badges {
+    /* Footer row inside card */
+    .card-footer {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       flex-wrap: wrap;
+      padding-top: 2px;
+      border-top: 1px solid var(--border);
     }
 
+    /* Source badge */
     .badge-sourced {
-      font-size: 11px;
-      font-weight: 500;
+      font-size: 12px;
       color: var(--green);
-      background: rgba(76,175,130,0.1);
-      border: 1px solid rgba(76,175,130,0.2);
-      border-radius: 99px;
-      padding: 2px 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
     }
     .badge-general {
-      font-size: 11px;
-      font-weight: 500;
+      font-size: 12px;
       color: var(--muted);
-      background: rgba(122,119,115,0.1);
-      border: 1px solid rgba(122,119,115,0.2);
-      border-radius: 99px;
-      padding: 2px 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
     }
 
-    /* Citations */
+    /* Divider dot */
+    .dot-sep {
+      width: 3px; height: 3px;
+      border-radius: 50%;
+      background: var(--border-mid);
+      flex-shrink: 0;
+    }
+
+    /* Citations toggle */
     .citations-toggle {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--muted);
       cursor: pointer;
       user-select: none;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
+      transition: color 150ms;
     }
     .citations-toggle:hover { color: var(--text); }
     .citations-toggle .chevron {
+      font-size: 10px;
       display: inline-block;
       transition: transform 200ms var(--ease);
     }
@@ -179,23 +243,23 @@
     .citations-body.open { max-height: 2000px; }
 
     .citation-item {
-      font-size: 12px;
-      color: var(--muted);
-      padding: 6px 0;
-      border-top: 1px solid var(--border);
       display: flex;
-      gap: 8px;
+      gap: 12px;
+      padding: 10px 0;
+      border-top: 1px solid var(--border);
       align-items: baseline;
     }
     .citation-index {
       color: var(--accent);
       font-weight: 600;
-      font-size: 11px;
+      font-size: 12px;
       flex-shrink: 0;
+      min-width: 24px;
     }
-    .citation-meta { display: flex; flex-direction: column; gap: 2px; }
-    .citation-source { color: var(--text); font-weight: 500; }
-    .citation-excerpt { color: var(--muted); font-style: italic; }
+    .citation-meta { display: flex; flex-direction: column; gap: 3px; }
+    .citation-source { color: var(--text-bright); font-size: 13px; font-weight: 500; }
+    .citation-score { color: var(--muted); font-size: 12px; }
+    .citation-excerpt { color: var(--muted); font-size: 13px; line-height: 1.5; }
 
     /* Hallucination indicator */
     .hall-toggle {
@@ -204,35 +268,23 @@
       user-select: none;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       border-radius: 99px;
       padding: 3px 10px;
       border: 1px solid;
-      transition: opacity 200ms;
+      transition: opacity 150ms;
     }
-    .hall-toggle:hover { opacity: 0.8; }
+    .hall-toggle:hover { opacity: 0.75; }
+    .hall-toggle:active { transform: scale(0.97); }
     .hall-toggle .chevron {
+      font-size: 10px;
       display: inline-block;
       transition: transform 200ms var(--ease);
-      font-size: 10px;
     }
     .hall-toggle.open .chevron { transform: rotate(180deg); }
-
-    .hall-consistent {
-      color: var(--green);
-      background: rgba(76,175,130,0.08);
-      border-color: rgba(76,175,130,0.2);
-    }
-    .hall-check {
-      color: var(--yellow);
-      background: rgba(212,160,23,0.08);
-      border-color: rgba(212,160,23,0.2);
-    }
-    .hall-flagged {
-      color: var(--red);
-      background: rgba(201,95,95,0.08);
-      border-color: rgba(201,95,95,0.2);
-    }
+    .hall-consistent { color: var(--green);  background: rgba(76,175,130,0.08); border-color: rgba(76,175,130,0.2); }
+    .hall-check      { color: var(--yellow); background: rgba(201,146,26,0.08); border-color: rgba(201,146,26,0.2); }
+    .hall-flagged    { color: var(--red);    background: rgba(192,85,85,0.08);  border-color: rgba(192,85,85,0.2); }
 
     .hall-body {
       overflow: hidden;
@@ -242,87 +294,100 @@
     .hall-body.open { max-height: 2000px; }
 
     .hall-sentences {
-      font-size: 13px;
-      line-height: 1.7;
-      padding-top: 8px;
+      font-size: 15px;
+      line-height: 1.8;
+      padding-top: 10px;
     }
-
-    .sent-span {
-      border-radius: 3px;
-      padding: 1px 2px;
-      cursor: default;
-    }
-    .sent-green  { background: rgba(76,175,130,0.15); }
-    .sent-yellow { background: rgba(212,160,23,0.18); }
-    .sent-red    { background: rgba(201,95,95,0.18); }
+    .sent-span { border-radius: 3px; padding: 1px 3px; cursor: default; }
+    .sent-green  { background: rgba(76,175,130,0.14); }
+    .sent-yellow { background: rgba(201,146,26,0.16); }
+    .sent-red    { background: rgba(192,85,85,0.16); }
 
     /* Loading skeleton */
     .skeleton {
-      background: linear-gradient(90deg, var(--surface) 25%, rgba(255,255,255,0.04) 50%, var(--surface) 75%);
+      background: linear-gradient(
+        90deg,
+        var(--surface) 25%,
+        rgba(255,255,255,0.05) 50%,
+        var(--surface) 75%
+      );
       background-size: 200% 100%;
-      animation: shimmer 1.4s infinite;
-      border-radius: 4px;
-      height: 14px;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
+      height: 16px;
     }
-    .skeleton + .skeleton { margin-top: 8px; }
+    .skeleton + .skeleton { margin-top: 10px; }
     @keyframes shimmer {
       0%   { background-position: 200% 0; }
       100% { background-position: -200% 0; }
     }
 
-    /* ── Input bar ──────────────────────────────────────────────────────── */
+    /* ── Input bar ────────────────────────────────────────────────── */
     #input-bar {
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      height: 64px;
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      gap: 10px;
-      background: var(--bg);
-      border-top: 1px solid var(--border);
+      padding: 14px 28px 20px;
+      background: linear-gradient(to top, var(--bg) 70%, transparent);
       z-index: 100;
+    }
+
+    #input-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border-mid);
+      border-radius: 14px;
+      padding: 10px 10px 10px 18px;
+      transition: border-color 150ms;
+    }
+    #input-inner:focus-within {
+      border-color: rgba(87, 94, 207, 0.45);
     }
 
     #question-input {
       flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 14px;
-      padding: 10px 14px;
+      background: none;
+      border: none;
+      color: var(--text-bright);
+      font-family: var(--font);
+      font-size: 15px;
+      line-height: 1.6;
       outline: none;
       resize: none;
-      transition: border-color 200ms var(--ease);
+      min-height: 24px;
+      max-height: 160px;
     }
     #question-input::placeholder { color: var(--muted); }
-    #question-input:focus { border-color: rgba(87, 94, 207, 0.5); }
 
     #send-btn {
       background: var(--accent);
       color: #fff;
       border: none;
-      border-radius: 8px;
-      padding: 10px 16px;
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 500;
+      border-radius: 9px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      transition: opacity 200ms var(--ease);
       flex-shrink: 0;
+      transition: opacity 150ms, transform 100ms;
     }
     #send-btn:hover:not(:disabled) { opacity: 0.85; }
-    #send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    #send-btn:active:not(:disabled) { transform: scale(0.93); }
+    #send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-    /* ── Upload modal ───────────────────────────────────────────────────── */
+    /* ── Upload modal ─────────────────────────────────────────────── */
     #modal-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.6);
-      backdrop-filter: blur(4px);
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       z-index: 200;
       align-items: center;
       justify-content: center;
@@ -331,60 +396,77 @@
 
     #modal-card {
       background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 28px;
-      width: min(440px, 92vw);
+      border: 1px solid var(--border-mid);
+      border-radius: 16px;
+      padding: 32px;
+      width: min(480px, 92vw);
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 20px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
     }
 
-    #modal-title {
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text);
+    #modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
+    #modal-title {
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--text-bright);
+      letter-spacing: -0.01em;
+    }
+    #modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 6px;
+      transition: color 150ms, background 150ms;
+    }
+    #modal-close:hover { color: var(--text); background: var(--surface-2); }
 
     #drop-zone {
-      border: 1.5px dashed var(--border);
-      border-radius: 8px;
-      padding: 36px 24px;
+      border: 1.5px dashed var(--border-mid);
+      border-radius: 12px;
+      padding: 44px 24px;
       text-align: center;
       color: var(--muted);
       cursor: pointer;
-      transition: border-color 200ms var(--ease), background 200ms var(--ease);
+      transition: border-color 150ms var(--ease), background 150ms;
+      font-size: 14px;
+      line-height: 1.6;
     }
+    #drop-zone .dz-icon {
+      font-size: 28px;
+      display: block;
+      margin-bottom: 10px;
+      opacity: 0.5;
+    }
+    #drop-zone .dz-hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+      opacity: 0.7;
+    }
+    #drop-zone:hover,
     #drop-zone.drag-over {
       border-color: var(--accent);
       background: var(--accent-dim);
+      color: var(--text);
     }
 
     #file-input { display: none; }
 
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-    }
-
-    .btn-ghost {
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      border-radius: 6px;
-      padding: 7px 14px;
-      font-family: inherit;
-      font-size: 13px;
-      cursor: pointer;
-      transition: color 200ms;
-    }
-    .btn-ghost:hover { color: var(--text); }
-
     #upload-status {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--muted);
       min-height: 18px;
+      text-align: center;
     }
     #upload-status.success { color: var(--green); }
     #upload-status.error   { color: var(--red); }
@@ -392,7 +474,7 @@
 </head>
 <body>
 
-<!-- ── Header ──────────────────────────────────────────────────────────── -->
+<!-- ── Header ──────────────────────────────────────────────────────── -->
 <header id="header">
   <div id="logo">
     RAG
@@ -401,24 +483,38 @@
   <button id="upload-btn" onclick="openModal()">Upload ⊕</button>
 </header>
 
-<!-- ── Messages ────────────────────────────────────────────────────────── -->
-<div id="messages"></div>
-
-<!-- ── Input bar ───────────────────────────────────────────────────────── -->
-<div id="input-bar">
-  <textarea
-    id="question-input"
-    rows="1"
-    placeholder="Ask a question…"
-    onkeydown="handleKey(event)"
-  ></textarea>
-  <button id="send-btn" onclick="sendQuery()">Send</button>
+<!-- ── Messages ────────────────────────────────────────────────────── -->
+<div id="messages">
+  <div id="empty-state">
+    <div class="empty-title">Ask anything</div>
+    <div class="empty-sub">Upload documents first, then ask questions about their content.</div>
+  </div>
 </div>
 
-<!-- ── Upload modal ─────────────────────────────────────────────────────── -->
+<!-- ── Input bar ───────────────────────────────────────────────────── -->
+<div id="input-bar">
+  <div id="input-inner">
+    <textarea
+      id="question-input"
+      rows="1"
+      placeholder="Ask a question…"
+      onkeydown="handleKey(event)"
+    ></textarea>
+    <button id="send-btn" onclick="sendQuery()" title="Send">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M3 8L13 8M13 8L9 4M13 8L9 12" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- ── Upload modal ─────────────────────────────────────────────────── -->
 <div id="modal-overlay" role="dialog" aria-modal="true">
   <div id="modal-card">
-    <div id="modal-title">Upload documents</div>
+    <div id="modal-header">
+      <div id="modal-title">Upload documents</div>
+      <button id="modal-close" onclick="closeModal()">×</button>
+    </div>
     <div
       id="drop-zone"
       onclick="document.getElementById('file-input').click()"
@@ -426,27 +522,27 @@
       ondragleave="onDragLeave(event)"
       ondrop="onDrop(event)"
     >
-      Drag &amp; drop PDF files here, or click to select
+      <span class="dz-icon">⊕</span>
+      Drag &amp; drop PDF files here
+      <div class="dz-hint">or click to select — PDF only, max 50 MB each</div>
     </div>
     <input id="file-input" type="file" multiple accept=".pdf" onchange="onFileSelect(event)" />
     <div id="upload-status"></div>
-    <div class="modal-actions">
-      <button class="btn-ghost" onclick="closeModal()">Close</button>
-    </div>
   </div>
 </div>
 
 <script>
-  // ── State ─────────────────────────────────────────────────────────────────
+  // ── State ─────────────────────────────────────────────────────────
   const state = { documentCount: 0, isLoading: false };
 
-  // ── Init ──────────────────────────────────────────────────────────────────
+  // ── Init ──────────────────────────────────────────────────────────
   async function init() {
     await refreshHealth();
 
-    document.getElementById('question-input').addEventListener('input', function() {
+    const ta = document.getElementById('question-input');
+    ta.addEventListener('input', function () {
       this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+      this.style.height = Math.min(this.scrollHeight, 160) + 'px';
     });
   }
 
@@ -454,22 +550,25 @@
     try {
       const r = await fetch('/health');
       if (!r.ok) return;
-      const data = await r.json();
-      state.documentCount = data.total_documents ?? 0;
+      const d = await r.json();
+      state.documentCount = d.total_documents ?? 0;
       document.getElementById('doc-badge').textContent =
         state.documentCount + (state.documentCount === 1 ? ' doc' : ' docs');
     } catch (_) {}
   }
 
-  // ── Query ─────────────────────────────────────────────────────────────────
+  // ── Query ──────────────────────────────────────────────────────────
   async function sendQuery() {
     const input = document.getElementById('question-input');
     const question = input.value.trim();
     if (!question || state.isLoading) return;
 
     state.isLoading = true;
-    const sendBtn = document.getElementById('send-btn');
-    sendBtn.disabled = true;
+    document.getElementById('send-btn').disabled = true;
+
+    // Remove empty state
+    const es = document.getElementById('empty-state');
+    if (es) es.remove();
 
     input.value = '';
     input.style.height = 'auto';
@@ -485,28 +584,23 @@
       });
       const data = await r.json();
       placeholder.replaceWith(buildAssistantCard(data));
-    } catch (err) {
+    } catch (_) {
       placeholder.replaceWith(buildAssistantCard({
         answer: 'Something went wrong. Please try again.',
-        grounded: false,
-        citations: [],
-        hallucination: null,
+        grounded: false, citations: [], hallucination: null,
       }));
     } finally {
       state.isLoading = false;
-      sendBtn.disabled = false;
+      document.getElementById('send-btn').disabled = false;
       scrollToBottom();
     }
   }
 
-  function handleKey(event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      sendQuery();
-    }
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendQuery(); }
   }
 
-  // ── Message builders ──────────────────────────────────────────────────────
+  // ── Message builders ───────────────────────────────────────────────
   function appendUserMessage(text) {
     const el = document.createElement('div');
     el.className = 'msg-user';
@@ -519,12 +613,12 @@
   function appendLoadingMessage() {
     const card = document.createElement('div');
     card.className = 'msg-assistant';
-    for (let i = 0; i < 3; i++) {
+    [100, 80, 55].forEach(w => {
       const sk = document.createElement('div');
       sk.className = 'skeleton';
-      sk.style.width = i === 2 ? '55%' : '100%';
+      sk.style.width = w + '%';
       card.appendChild(sk);
-    }
+    });
     document.getElementById('messages').appendChild(card);
     scrollToBottom();
     return card;
@@ -534,145 +628,77 @@
     const card = document.createElement('div');
     card.className = 'msg-assistant';
 
-    // Answer text
+    // Answer
     const answerEl = document.createElement('div');
     answerEl.className = 'answer-text';
     answerEl.innerHTML = renderMarkdown(data.answer ?? '');
     card.appendChild(answerEl);
 
-    // Badges row
-    const badges = document.createElement('div');
-    badges.className = 'badges';
+    // Footer row
+    const footer = document.createElement('div');
+    footer.className = 'card-footer';
 
-    const sourcedBadge = document.createElement('span');
+    // Source badge
+    const badge = document.createElement('span');
     if (data.grounded) {
-      sourcedBadge.className = 'badge-sourced';
-      sourcedBadge.textContent = '● sourced';
+      badge.className = 'badge-sourced';
+      badge.textContent = '● sourced';
     } else {
-      sourcedBadge.className = 'badge-general';
-      sourcedBadge.textContent = '◌ general';
+      badge.className = 'badge-general';
+      badge.textContent = '◌ general';
     }
-    badges.appendChild(sourcedBadge);
+    footer.appendChild(badge);
 
-    // Hallucination pill (grounded answers with result)
-    if (data.grounded && data.hallucination) {
-      badges.appendChild(buildHallucinationToggle(data));
-    }
-
-    card.appendChild(badges);
-
-    // Citations (collapsible)
+    // Citations
     if (data.citations && data.citations.length > 0) {
-      card.appendChild(buildCitations(data.citations));
+      footer.appendChild(makeDot());
+      footer.appendChild(buildCitationsToggle(data.citations));
     }
 
-    // Hallucination sentence breakdown
+    // Hallucination pill
     if (data.grounded && data.hallucination) {
-      card.appendChild(buildHallucinationBody(data.hallucination, data.answer));
+      footer.appendChild(makeDot());
+      const pill = buildHallPill(data.hallucination);
+      footer.appendChild(pill);
     }
+
+    card.appendChild(footer);
+
+    // Expandable sections (appended after footer)
+    if (data.citations && data.citations.length > 0) {
+      card.appendChild(buildCitationsBody(data.citations));
+    }
+    if (data.grounded && data.hallucination) {
+      card.appendChild(buildHallBody(data.hallucination));
+    }
+
+    // Wire toggles after DOM is built
+    setTimeout(() => wireToggles(card), 0);
 
     return card;
   }
 
-  // ── Hallucination UI ──────────────────────────────────────────────────────
-  function hallClass(score) {
-    if (score >= 0.7) return 'hall-consistent';
-    if (score >= 0.4) return 'hall-check';
-    return 'hall-flagged';
+  function makeDot() {
+    const d = document.createElement('span');
+    d.className = 'dot-sep';
+    return d;
   }
 
-  function hallLabel(score) {
-    if (score >= 0.7) return 'Consistent';
-    if (score >= 0.4) return 'Check';
-    return 'Flagged';
-  }
-
-  function buildHallucinationToggle(data) {
-    const h = data.hallucination;
-    const scoreStr = h.overall_score.toFixed(2);
-    const cls = hallClass(h.overall_score);
-
-    const toggle = document.createElement('button');
-    toggle.className = 'hall-toggle ' + cls;
-    toggle.setAttribute('aria-expanded', 'false');
-
-    const label = document.createElement('span');
-    label.textContent = hallLabel(h.overall_score) + ' ' + scoreStr;
-
-    const chevron = document.createElement('span');
-    chevron.className = 'chevron';
-    chevron.textContent = '▾';
-
-    toggle.appendChild(label);
-    toggle.appendChild(chevron);
-
-    toggle.addEventListener('click', () => {
-      const bodyId = toggle.dataset.bodyId;
-      const body = document.getElementById(bodyId);
-      if (!body) return;
-      const isOpen = body.classList.contains('open');
-      body.classList.toggle('open', !isOpen);
-      toggle.classList.toggle('open', !isOpen);
-      toggle.setAttribute('aria-expanded', String(!isOpen));
-    });
-
-    // ID is assigned after body is created; we set it here and patch below
-    const uid = 'hall-' + Math.random().toString(36).slice(2);
-    toggle.dataset.bodyId = uid;
-    toggle._uid = uid;
-
+  // ── Citations ──────────────────────────────────────────────────────
+  function buildCitationsToggle(citations) {
+    const toggle = document.createElement('span');
+    toggle.className = 'citations-toggle';
+    toggle.dataset.target = 'citations';
+    toggle.innerHTML =
+      citations.length + ' source' + (citations.length !== 1 ? 's' : '') +
+      ' <span class="chevron">▾</span>';
     return toggle;
   }
 
-  function buildHallucinationBody(hallucination, answer) {
-    const body = document.createElement('div');
-    body.className = 'hall-body';
-
-    // Find the toggle that owns this body (last button in parent with hall-toggle class)
-    // We assign the id lazily after insertion
-    const inner = document.createElement('div');
-    inner.className = 'hall-sentences';
-
-    for (const ss of hallucination.sentences) {
-      const span = document.createElement('span');
-      span.className = 'sent-span ' + (ss.score >= 0.7 ? 'sent-green' : ss.score >= 0.4 ? 'sent-yellow' : 'sent-red');
-      span.title = 'Score: ' + ss.score.toFixed(2);
-      span.textContent = ss.sentence + ' ';
-      inner.appendChild(span);
-    }
-
-    body.appendChild(inner);
-
-    // Tag with id after append — the toggle stores expected id
-    setTimeout(() => {
-      // Walk up to find toggle in same card
-      const card = body.closest('.msg-assistant');
-      if (!card) return;
-      const toggle = card.querySelector('.hall-toggle');
-      if (toggle && toggle._uid) {
-        body.id = toggle._uid;
-      }
-    }, 0);
-
-    return body;
-  }
-
-  // ── Citations ─────────────────────────────────────────────────────────────
-  function buildCitations(citations) {
-    const wrapper = document.createElement('div');
-
-    const toggle = document.createElement('span');
-    toggle.className = 'citations-toggle';
-    toggle.innerHTML = citations.length + ' source' + (citations.length > 1 ? 's' : '') +
-      ' <span class="chevron">▾</span>';
-
+  function buildCitationsBody(citations) {
     const body = document.createElement('div');
     body.className = 'citations-body';
-
-    toggle.addEventListener('click', () => {
-      const open = body.classList.toggle('open');
-      toggle.classList.toggle('open', open);
-    });
+    body.dataset.role = 'citations';
 
     for (const c of citations) {
       const item = document.createElement('div');
@@ -687,84 +713,125 @@
 
       const src = document.createElement('span');
       src.className = 'citation-source';
-      src.textContent = c.source_file + (c.page_number ? ' · p.' + c.page_number : '');
+      src.textContent = c.source_file + (c.page_number ? '  ·  p.' + c.page_number : '');
+
+      const score = document.createElement('span');
+      score.className = 'citation-score';
+      score.textContent = 'similarity ' + c.similarity_score.toFixed(3);
 
       const excerpt = document.createElement('span');
       excerpt.className = 'citation-excerpt';
       excerpt.textContent = c.excerpt;
 
       meta.appendChild(src);
+      meta.appendChild(score);
       meta.appendChild(excerpt);
       item.appendChild(idx);
       item.appendChild(meta);
       body.appendChild(item);
     }
 
-    wrapper.appendChild(toggle);
-    wrapper.appendChild(body);
-    return wrapper;
+    return body;
   }
 
-  // ── Markdown renderer ─────────────────────────────────────────────────────
+  // ── Hallucination ──────────────────────────────────────────────────
+  function hallCls(score) {
+    return score >= 0.7 ? 'hall-consistent' : score >= 0.4 ? 'hall-check' : 'hall-flagged';
+  }
+  function hallLabel(score) {
+    return score >= 0.7 ? 'Consistent' : score >= 0.4 ? 'Check' : 'Flagged';
+  }
+
+  function buildHallPill(h) {
+    const pill = document.createElement('button');
+    pill.className = 'hall-toggle ' + hallCls(h.overall_score);
+    pill.dataset.target = 'hall';
+    pill.innerHTML =
+      hallLabel(h.overall_score) + ' ' + h.overall_score.toFixed(2) +
+      ' <span class="chevron">▾</span>';
+    return pill;
+  }
+
+  function buildHallBody(h) {
+    const body = document.createElement('div');
+    body.className = 'hall-body';
+    body.dataset.role = 'hall';
+
+    const inner = document.createElement('div');
+    inner.className = 'hall-sentences';
+
+    for (const ss of h.sentences) {
+      const span = document.createElement('span');
+      span.className = 'sent-span ' + (ss.score >= 0.7 ? 'sent-green' : ss.score >= 0.4 ? 'sent-yellow' : 'sent-red');
+      span.title = 'Score: ' + ss.score.toFixed(2);
+      span.textContent = ss.sentence + ' ';
+      inner.appendChild(span);
+    }
+
+    body.appendChild(inner);
+    return body;
+  }
+
+  function wireToggles(card) {
+    card.querySelectorAll('[data-target]').forEach(toggle => {
+      const role = toggle.dataset.target;
+      const body = card.querySelector('[data-role="' + role + '"]');
+      if (!body) return;
+      toggle.addEventListener('click', () => {
+        const open = body.classList.toggle('open');
+        toggle.classList.toggle('open', open);
+      });
+    });
+  }
+
+  // ── Markdown ───────────────────────────────────────────────────────
   function renderMarkdown(raw) {
-    // 1. HTML-escape first (XSS safety)
     let html = raw
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
 
-    // 2. Apply transforms
-    // Headers
     html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
     html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
-
-    // Bold
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-
-    // Citation markers [N]
     html = html.replace(/\[(\d+)\]/g, '<sup>[$1]</sup>');
-
-    // Bullet lists
-    html = html.replace(/^[*-] (.+)$/gm, '<li>$1</li>');
-    html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
-
-    // Numbered lists
+    html = html.replace(/^[*\-] (.+)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>\n?)+/g, m => '<ul>' + m + '</ul>');
     html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
 
-    // Line breaks → paragraphs (double newline)
     const paras = html.split(/\n{2,}/);
     html = paras.map(p => {
       p = p.trim();
       if (!p) return '';
-      if (p.startsWith('<h3>') || p.startsWith('<ul>') || p.startsWith('<ol>')) return p;
+      if (/^<(h3|ul|ol|li)/.test(p)) return p;
       return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
     }).filter(Boolean).join('');
 
     return html;
   }
 
-  // ── Upload ────────────────────────────────────────────────────────────────
+  // ── Upload ─────────────────────────────────────────────────────────
   async function uploadFiles(files) {
-    if (!files || files.length === 0) return;
-
+    if (!files || !files.length) return;
     setUploadStatus('Uploading…', '');
+
     const fd = new FormData();
     for (const f of files) fd.append('files', f);
 
     try {
       const r = await fetch('/ingest', { method: 'POST', body: fd });
-      const data = await r.json();
+      const d = await r.json();
       if (r.ok) {
         setUploadStatus(
-          data.chunks_added + ' chunks added from ' + data.files_processed + ' file(s)',
+          '✓ ' + d.chunks_added + ' chunks added from ' + d.files_processed + ' file(s)',
           'success'
         );
         await refreshHealth();
       } else {
-        setUploadStatus(data.detail ?? 'Upload failed.', 'error');
+        setUploadStatus(d.detail ?? 'Upload failed.', 'error');
       }
-    } catch (err) {
-      setUploadStatus('Network error.', 'error');
+    } catch (_) {
+      setUploadStatus('Network error — is the server running?', 'error');
     }
   }
 
@@ -774,46 +841,24 @@
     el.className = cls;
   }
 
-  // ── Modal ─────────────────────────────────────────────────────────────────
-  function openModal() {
-    document.getElementById('modal-overlay').classList.add('open');
-    setUploadStatus('', '');
-  }
-
-  function closeModal() {
-    document.getElementById('modal-overlay').classList.remove('open');
-  }
+  // ── Modal ──────────────────────────────────────────────────────────
+  function openModal()  { document.getElementById('modal-overlay').classList.add('open'); setUploadStatus('', ''); }
+  function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
 
   document.getElementById('modal-overlay').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
   });
 
-  function onDragOver(e) {
-    e.preventDefault();
-    document.getElementById('drop-zone').classList.add('drag-over');
-  }
-  function onDragLeave() {
-    document.getElementById('drop-zone').classList.remove('drag-over');
-  }
-  function onDrop(e) {
-    e.preventDefault();
-    document.getElementById('drop-zone').classList.remove('drag-over');
-    uploadFiles(e.dataTransfer.files);
-  }
-  function onFileSelect(e) {
-    uploadFiles(e.target.files);
-    e.target.value = '';
-  }
+  function onDragOver(e)  { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
+  function onDragLeave()  { document.getElementById('drop-zone').classList.remove('drag-over'); }
+  function onDrop(e)      { e.preventDefault(); document.getElementById('drop-zone').classList.remove('drag-over'); uploadFiles(e.dataTransfer.files); }
+  function onFileSelect(e){ uploadFiles(e.target.files); e.target.value = ''; }
 
-  // ── Utilities ─────────────────────────────────────────────────────────────
+  // ── Scroll ─────────────────────────────────────────────────────────
   function scrollToBottom() {
-    const area = document.getElementById('messages');
-    area.scrollTo({ top: area.scrollHeight, behavior: 'smooth' });
-    // Also scroll the window
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   }
 
-  // ── Boot ──────────────────────────────────────────────────────────────────
   init();
 </script>
 </body>
