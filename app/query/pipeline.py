@@ -45,7 +45,7 @@ from app.api.schemas import (
 from app.config import Settings
 from app.hallucination.checker import HallucinationChecker
 from app.intent.detector import IntentDetector
-from app.llm.client import MistralClient
+from app.llm.base import LLMClient
 from app.llm.prompts.answer import comparison, conversational, factual, list_format, table
 from app.query.hyde import HyDETransformer
 from app.retrieval.hybrid import hybrid_retrieve
@@ -67,7 +67,7 @@ class QueryPipeline:
     def __init__(
         self,
         store: VectorStore,
-        client: MistralClient,
+        client: LLMClient,
         settings: Settings,
         checker: HallucinationChecker | None = None,
     ) -> None:

@@ -16,14 +16,14 @@ import logging
 
 from app.api.schemas import IntentResult, PrimaryIntent, SubIntent
 from app.config import Settings
-from app.llm.client import MistralClient
+from app.llm.base import LLMClient
 from app.llm.prompts.intent import build_intent_messages
 
 logger = logging.getLogger(__name__)
 
 
 class IntentDetector:
-    def __init__(self, client: MistralClient, settings: Settings) -> None:
+    def __init__(self, client: LLMClient, settings: Settings) -> None:
         self._client = client
         self._confidence_min = settings.intent_confidence_min
 

@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from app.config import Settings
 from app.ingestion.chunker import Chunk, chunk_document
 from app.ingestion.pdf_extractor import extract_pdf
-from app.llm.client import MistralClient
+from app.llm.base import LLMClient
 from app.store.vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ class IngestionResult:
 async def ingest_files(
     files: list[tuple[str, bytes]],  # (filename, raw_bytes) pairs
     store: VectorStore,
-    client: MistralClient,
+    client: LLMClient,
     settings: Settings,
 ) -> list[IngestionResult]:
     """
@@ -72,7 +72,7 @@ async def _ingest_one(
     filename: str,
     raw_bytes: bytes,
     store: VectorStore,
-    client: MistralClient,
+    client: LLMClient,
     settings: Settings,
 ) -> IngestionResult:
     """Process a single PDF file end-to-end."""

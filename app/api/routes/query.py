@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends
 from app.api.schemas import QueryRequest, QueryResponse
 from app.config import Settings, get_settings
 from app.dependencies import get_mistral_client, get_query_pipeline, get_vector_store
-from app.llm.client import MistralClient
+from app.llm.base import LLMClient
 from app.query.pipeline import QueryPipeline
 from app.store.vector_store import VectorStore
 

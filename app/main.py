@@ -2,14 +2,9 @@
 FastAPI application factory.
 
 The lifespan context manager handles startup and shutdown:
-- Startup: load the vector store from disk (if a previous run persisted data),
-  create the Mistral HTTP client, wire up the QueryPipeline.
+- Startup: load the vector store from disk, create the LLM client
+  (OpenAI or Mistral depending on LLM_PROVIDER), wire up the QueryPipeline.
 - Shutdown: flush the connection pool gracefully.
-
-CORS is configured to accept all origins by default so that the Lovable
-frontend (hosted on a different domain/port) can call the API without
-browser-level blocks.  In production, restrict allowed_origins to the
-specific frontend domain.
 """
 
 import logging
@@ -23,11 +18,12 @@ from fastapi.staticfiles import StaticFiles
 from app.api.routes import documents, health, ingest, query
 from app.config import get_settings
 from app.hallucination.checker import HallucinationChecker
+from app.llm.base import LLMClient
 from app.llm.client import MistralClient
+from app.llm.openai_client import OpenAIClient
 from app.query.pipeline import QueryPipeline
 from app.store.vector_store import VectorStore
 
-# ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -35,33 +31,33 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# ── Lifespan ──────────────────────────────────────────────────────────────────
+def _build_llm_client(settings) -> LLMClient:
+    """Instantiate the right LLM client based on LLM_PROVIDER."""
+    provider = settings.llm_provider.lower()
+    if provider == "openai":
+        logger.info("LLM provider: OpenAI (chat=%s, embed=%s)",
+                    settings.openai_chat_model, settings.openai_embed_model)
+        return OpenAIClient(settings=settings)
+    else:
+        logger.info("LLM provider: Mistral (chat=%s, embed=%s)",
+                    settings.mistral_chat_model, settings.mistral_embed_model)
+        return MistralClient(settings=settings)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Initialise singletons on startup; clean up on shutdown.
-
-    Using the lifespan pattern (rather than @app.on_event) is the modern
-    FastAPI approach — it works correctly with pytest-asyncio test fixtures
-    and avoids deprecation warnings.
-    """
     settings = get_settings()
 
-    # ── Startup ───────────────────────────────────────────────────────────────
-    logger.info("Starting RAG API (model: %s).", settings.mistral_chat_model)
-
     store = VectorStore(store_path=settings.store_path)
-    store.load()  # no-op if no data persisted yet
+    store.load()
 
-    client = MistralClient(settings=settings)
+    client: LLMClient = _build_llm_client(settings)
 
     checker = HallucinationChecker()
     pipeline = QueryPipeline(store=store, client=client, settings=settings, checker=checker)
 
-    # Attach to app.state so route handlers can access via Depends()
     app.state.vector_store = store
-    app.state.mistral_client = client
+    app.state.llm_client = client
     app.state.hallucination_checker = checker
     app.state.query_pipeline = pipeline
 
@@ -70,20 +66,18 @@ async def lifespan(app: FastAPI):
         store.total_chunks, store.total_documents,
     )
 
-    yield  # Application runs here
+    yield
 
-    # ── Shutdown ──────────────────────────────────────────────────────────────
     await client.close()
-    logger.info("Mistral client closed. Shutdown complete.")
+    logger.info("LLM client closed. Shutdown complete.")
 
-
-# ── Application factory ───────────────────────────────────────────────────────
 
 def create_app() -> FastAPI:
     app = FastAPI(
         title="RAG Pipeline API",
         description=(
-            "Retrieval-Augmented Generation over PDF documents using Mistral AI.  "
+            "Retrieval-Augmented Generation over PDF documents.  "
+            "Supports OpenAI and Mistral AI — set LLM_PROVIDER in .env.  "
             "Implements hybrid BM25 + dense retrieval, HyDE query transformation, "
             "LLM reranking, and intent-aware answer shaping."
         ),
@@ -91,22 +85,20 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # ── CORS ──────────────────────────────────────────────────────────────────
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],   # Restrict in production
+        allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
-    # ── Routers ───────────────────────────────────────────────────────────────
     app.include_router(health.router, tags=["Health"])
     app.include_router(ingest.router, tags=["Ingestion"])
     app.include_router(query.router, tags=["Query"])
     app.include_router(documents.router, tags=["Documents"])
 
-    # ── Static files (UI) — must be mounted LAST so API routes take priority ──
+    # Must be mounted LAST — StaticFiles on "/" would shadow API routes if first
     app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
 
     return app

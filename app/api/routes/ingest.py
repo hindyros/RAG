@@ -25,7 +25,7 @@ from app.api.schemas import IngestResponse
 from app.config import Settings, get_settings
 from app.dependencies import get_mistral_client, get_vector_store
 from app.ingestion.pipeline import ingest_files
-from app.llm.client import MistralClient
+from app.llm.base import LLMClient
 from app.store.vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ def _sanitise_filename(name: str) -> str:
 async def ingest_endpoint(
     files: list[UploadFile] = File(..., description="One or more PDF files"),
     store: VectorStore = Depends(get_vector_store),
-    client: MistralClient = Depends(get_mistral_client),
+    client: LLMClient = Depends(get_mistral_client),
     settings: Settings = Depends(get_settings),
 ) -> IngestResponse:
     if not files:

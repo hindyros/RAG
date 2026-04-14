@@ -16,14 +16,14 @@ import logging
 
 import numpy as np
 
-from app.llm.client import MistralClient
+from app.llm.base import LLMClient
 from app.llm.prompts.hyde import build_hyde_messages
 
 logger = logging.getLogger(__name__)
 
 
 class HyDETransformer:
-    def __init__(self, client: MistralClient) -> None:
+    def __init__(self, client: LLMClient) -> None:
         self._client = client
 
     async def transform(self, query: str) -> tuple[np.ndarray, str]:

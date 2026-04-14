@@ -21,14 +21,14 @@ Trade-off:
 import json
 import logging
 
-from app.llm.client import MistralClient
+from app.llm.base import LLMClient
 from app.llm.prompts.rerank import build_rerank_messages
 
 logger = logging.getLogger(__name__)
 
 
 class Reranker:
-    def __init__(self, client: MistralClient) -> None:
+    def __init__(self, client: LLMClient) -> None:
         self._client = client
 
     async def rerank(
