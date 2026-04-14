@@ -15,20 +15,13 @@ import torch
 
 @pytest.fixture(autouse=True)
 def mock_transformers(monkeypatch):
-    """Prevent real model/tokenizer downloads for all tests in this module."""
+    """Prevent real model download for all tests in this module."""
     mock_model_instance = MagicMock()
-    mock_tokenizer_instance = MagicMock()
 
-    with (
-        patch(
-            "app.hallucination.checker.AutoModelForSequenceClassification"
-        ) as mock_model_cls,
-        patch(
-            "app.hallucination.checker.AutoTokenizer"
-        ) as mock_tokenizer_cls,
-    ):
+    with patch(
+        "app.hallucination.checker.AutoModelForSequenceClassification"
+    ) as mock_model_cls:
         mock_model_cls.from_pretrained.return_value = mock_model_instance
-        mock_tokenizer_cls.from_pretrained.return_value = mock_tokenizer_instance
         # Make .to() and .eval() chainable
         mock_model_instance.to.return_value = mock_model_instance
         mock_model_instance.eval.return_value = mock_model_instance

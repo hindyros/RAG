@@ -10,7 +10,7 @@ a per-sentence breakdown plus a conservative overall score (minimum).
 import logging
 
 import torch
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from transformers import AutoModelForSequenceClassification
 
 from app.api.schemas import HallucinationResult, SentenceScore
 from app.utils.text import split_sentences
@@ -24,7 +24,6 @@ class HallucinationChecker:
     def __init__(self) -> None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info("Loading hallucination model '%s' on %s …", _MODEL_ID, device)
-        self._tokenizer = AutoTokenizer.from_pretrained(_MODEL_ID)
         self._model = AutoModelForSequenceClassification.from_pretrained(
             _MODEL_ID, trust_remote_code=True
         )
