@@ -64,14 +64,14 @@
     }
 
     #logo {
-      font-size: 14px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--text);
       display: flex;
       align-items: center;
       gap: 10px;
+    }
+    #logo img {
+      height: 28px;
+      width: auto;
+      display: block;
     }
 
     #doc-badge {
@@ -592,7 +592,7 @@
 <!-- ── Header ──────────────────────────────────────────────────────── -->
 <header id="header">
   <div id="logo">
-    StackAI
+    <img src="/logo.avif" alt="StackAI" />
     <span id="doc-badge" onclick="openDocsModal()" title="View documents">0 docs</span>
   </div>
   <div class="header-actions">
