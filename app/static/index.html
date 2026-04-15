@@ -336,8 +336,12 @@
 
     /* ── ASCII loading ─────────────────────────────────────────── */
     .msg-loading {
-      align-self: flex-start;
-      padding: 8px 0;
+      align-self: center;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 0;
     }
 
     .ascii-frame {
@@ -348,6 +352,7 @@
       white-space: pre;
       opacity: 0.82;
       user-select: none;
+      text-align: left;
     }
     .ascii-frame span {
       opacity: 0;
@@ -366,6 +371,7 @@
       font-size: 12px;
       color: var(--text-muted);
       letter-spacing: 0.05em;
+      justify-content: center;
     }
     .ascii-status .pulse {
       width: 6px; height: 6px;
