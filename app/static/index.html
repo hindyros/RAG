@@ -8,31 +8,31 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      /* ── Palantir Blueprint dark-mode palette ──────────────────── */
-      --bg:          #1C2127;   /* DARK_GRAY1 */
-      --surface:     #252A31;   /* DARK_GRAY2 */
-      --surface-2:   #2F343C;   /* DARK_GRAY3 */
-      --surface-3:   #383E47;   /* DARK_GRAY4 */
-      --surface-4:   #404854;   /* DARK_GRAY5 */
+      /* ── Black theme with light-green accent ───────────────────── */
+      --bg:          #000000;
+      --surface:     #0d0d0d;
+      --surface-2:   #141414;
+      --surface-3:   #1a1a1a;
+      --surface-4:   #222222;
 
-      --text:        #F6F7F9;   /* LIGHT_GRAY5 — primary text */
-      --text-2:      #E5E8EB;   /* LIGHT_GRAY3 */
-      --text-muted:  #8F99A8;   /* GRAY3 */
-      --text-dim:    #5F6B7C;   /* GRAY1 */
+      --text:        #F0F0F0;
+      --text-2:      #D8D8D8;
+      --text-muted:  #7A7A7A;
+      --text-dim:    #4A4A4A;
 
-      --blue:        #2D72D2;   /* BLUE3 — primary intent */
-      --blue-dim:    rgba(45, 114, 210, 0.18);
-      --blue-border: rgba(45, 114, 210, 0.45);
+      --blue:        #4ade80;   /* light green — primary accent */
+      --blue-dim:    rgba(74, 222, 128, 0.12);
+      --blue-border: rgba(74, 222, 128, 0.40);
 
-      --green:       #238551;   /* GREEN3 */
-      --green-bg:    rgba(35, 133, 81, 0.15);
-      --orange:      #C87619;   /* ORANGE3 */
-      --orange-bg:   rgba(200, 118, 25, 0.15);
-      --red:         #CD4246;   /* RED3 */
-      --red-bg:      rgba(205, 66, 70, 0.15);
+      --green:       #4ade80;
+      --green-bg:    rgba(74, 222, 128, 0.12);
+      --orange:      #fb923c;
+      --orange-bg:   rgba(251, 146, 60, 0.15);
+      --red:         #f87171;
+      --red-bg:      rgba(248, 113, 113, 0.15);
 
-      --border:      #383E47;   /* DARK_GRAY4 */
-      --border-light:#2F343C;   /* DARK_GRAY3 */
+      --border:      #242424;
+      --border-light:#1a1a1a;
 
       --radius:      2px;
       --font:        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
@@ -119,8 +119,8 @@
       color: #fff;
       border: 1px solid transparent;
     }
-    .btn-primary:hover { background: #215DB0; }
-    .btn-primary:active { background: #184A90; }
+    .btn-primary:hover { background: #36c96b; }
+    .btn-primary:active { background: #22b357; }
     .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
 
     /* ── Messages ─────────────────────────────────────────────────── */
@@ -236,7 +236,7 @@
       border: 1px solid;
       cursor: default;
     }
-    .tag-green  { color: #3dae7a; background: var(--green-bg);  border-color: rgba(35,133,81,0.3); }
+    .tag-green  { color: #4ade80; background: var(--green-bg);  border-color: rgba(74,222,128,0.3); }
     .tag-gray   { color: var(--text-muted); background: var(--surface-2); border-color: var(--border); }
 
     .dot-sep { width: 1px; height: 12px; background: var(--border); flex-shrink: 0; }
@@ -281,7 +281,7 @@
     .hall-btn .chevron { font-size: 8px; transition: transform 150ms; }
     .hall-btn.open .chevron { transform: rotate(180deg); }
 
-    .hall-green  { color: #3dae7a; background: var(--green-bg);  border-color: rgba(35,133,81,0.3); }
+    .hall-green  { color: #4ade80; background: var(--green-bg);  border-color: rgba(74,222,128,0.3); }
     .hall-orange { color: #e8921f; background: var(--orange-bg); border-color: rgba(200,118,25,0.3); }
     .hall-red    { color: #e36a6e; background: var(--red-bg);    border-color: rgba(205,66,70,0.3); }
 
@@ -330,7 +330,7 @@
     }
     .hall-sentences { font-size: 15px; line-height: 1.85; padding-top: 4px; }
     .sent-span { border-radius: 1px; padding: 1px 2px; cursor: default; }
-    .sent-green  { background: rgba(35,133,81,0.18); }
+    .sent-green  { background: rgba(74,222,128,0.18); }
     .sent-orange { background: rgba(200,118,25,0.18); }
     .sent-red    { background: rgba(205,66,70,0.18); }
 
@@ -441,8 +441,8 @@
       cursor: pointer;
       transition: background 100ms;
     }
-    #send-btn:hover:not(:disabled) { background: #215DB0; }
-    #send-btn:active:not(:disabled) { background: #184A90; }
+    #send-btn:hover:not(:disabled) { background: #36c96b; }
+    #send-btn:active:not(:disabled) { background: #22b357; }
     #send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
     /* ── Modals ─────────────────────────────────────────────────── */
@@ -517,7 +517,7 @@
     #file-input { display: none; }
 
     #upload-status { font-size: 13px; color: var(--text-muted); min-height: 18px; text-align: center; font-family: var(--mono); }
-    #upload-status.success { color: #3dae7a; }
+    #upload-status.success { color: #4ade80; }
     #upload-status.error   { color: #e36a6e; }
 
     .modal-actions { display: flex; gap: 6px; justify-content: flex-end; }
