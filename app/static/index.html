@@ -727,8 +727,10 @@ async function sendQuery() {
       body: JSON.stringify({ question }),
     });
     const data = await r.json();
+    clearInterval(placeholder._animInterval);
     placeholder.replaceWith(buildAssistantCard(data));
   } catch (_) {
+    clearInterval(placeholder._animInterval);
     placeholder.replaceWith(buildAssistantCard({
       answer: 'Request failed. Please try again.',
       grounded: false, citations: [], hallucination: null,
@@ -745,13 +747,8 @@ function handleKey(e) {
 }
 
 // ── ASCII loading ──────────────────────────────────────────────────
-function appendAsciiLoading() {
-  const wrap = document.createElement('div');
-  wrap.className = 'msg-loading';
-
-  const frame = document.createElement('div');
-  frame.className = 'ascii-frame';
-
+function buildAsciiFrame(frame) {
+  frame.innerHTML = '';
   let delay = 0;
   ASCII_LOGO.forEach(line => {
     for (let i = 0; i < line.length; i++) {
@@ -763,6 +760,15 @@ function appendAsciiLoading() {
     }
     frame.appendChild(document.createTextNode('\n'));
   });
+}
+
+function appendAsciiLoading() {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-loading';
+
+  const frame = document.createElement('div');
+  frame.className = 'ascii-frame';
+  buildAsciiFrame(frame);
 
   const status = document.createElement('div');
   status.className = 'ascii-status';
@@ -770,6 +776,10 @@ function appendAsciiLoading() {
 
   wrap.appendChild(frame);
   wrap.appendChild(status);
+
+  // Loop: rebuild spans every 1200ms (1000ms reveal + 200ms hold)
+  wrap._animInterval = setInterval(() => buildAsciiFrame(frame), 1200);
+
   document.getElementById('messages').appendChild(wrap);
   scrollToBottom();
   return wrap;
