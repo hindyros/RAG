@@ -37,7 +37,7 @@ async def query_endpoint(
     pipeline: QueryPipeline = Depends(get_query_pipeline),
 ) -> QueryResponse:
     logger.info("Query received: %.80s", body.question)
-    response = await pipeline.run(body.question)
+    response = await pipeline.run(body.question, document_ids=body.document_ids)
     logger.info(
         "Query answered: refused=%s intent=%s citations=%d",
         response.refused,

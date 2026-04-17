@@ -1,19 +1,26 @@
 # RAG Pipeline
 
-A production-grade Retrieval-Augmented Generation (RAG) backend built with FastAPI and Mistral AI.
+A production-grade Retrieval-Augmented Generation (RAG) backend built with FastAPI. Supports **OpenAI** (default) and **Mistral AI** — switch via `LLM_PROVIDER` in `.env`.
+
+**Demo:** https://www.loom.com/share/b3d5f9d581b84005baf36c1fe8148d1f
 
 ## System Design
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                     Built-in Dark UI (/ static)                     │
+│          Chat · Document Manager · Semantic Map                     │
 └────────────────────────┬────────────────────────────────────────────┘
                          │ HTTP
           ┌──────────────▼──────────────┐
           │        FastAPI Backend       │
           │                              │
-          │  POST /ingest   POST /query  │
-          │  GET  /health   GET  /      │
+          │  POST /ingest               │
+          │  POST /query                │
+          │  GET  /documents            │
+          │  DELETE /documents/{id}     │
+          │  GET  /visualize            │
+          │  GET  /health               │
           └──────┬───────────┬──────────┘
                  │           │
     ┌────────────▼──┐   ┌────▼──────────────────────────────────┐
@@ -26,8 +33,8 @@ A production-grade Retrieval-Augmented Generation (RAG) backend built with FastA
     │  Chunking      │   │  2. HyDE Query Transformation          │
     │  ↓             │   │     Generate hypothetical doc → embed  │
     │  Batch Embed   │   │                                        │
-    │  (mistral-     │   │  3. Hybrid Retrieval                   │
-    │   embed)       │   │     ├─ Dense: cosine similarity        │
+    │  (OpenAI or    │   │  3. Hybrid Retrieval                   │
+    │   Mistral)     │   │     ├─ Dense: cosine similarity        │
     │  ↓             │   │     ├─ Sparse: BM25                    │
     │  Vector Store  │   │     └─ RRF fusion                      │
     └────────────────┘   │                                        │
@@ -40,7 +47,7 @@ A production-grade Retrieval-Augmented Generation (RAG) backend built with FastA
     │  BM25 Index    │   │  6. Answer Shaping                     │
     │  Metadata      │   │     factual / list / comparison / table│
     │  ──────────── │   │                                        │
-    │  Persist:      │   │  7. Generation (mistral-large)         │
+    │  Persist:      │   │  7. Generation (OpenAI or Mistral)     │
     │  .npz + .json  │   │     Answer + inline [N] citations      │
     └────────────────┘   │                                        │
                          │  8. Hallucination Detection            │
@@ -56,17 +63,20 @@ A production-grade Retrieval-Augmented Generation (RAG) backend built with FastA
 |---|---|
 | PDF extraction | PyMuPDF — font metadata for header detection |
 | Chunking | 3-pass semantic (header → sentence boundary → overlap) |
-| Embeddings | Mistral `mistral-embed` (1024-dim) |
+| Embeddings | OpenAI `text-embedding-3-small` (1536-dim) or Mistral `mistral-embed` (1024-dim) |
 | Dense retrieval | Cosine similarity — numpy matrix multiply |
 | Sparse retrieval | BM25Okapi — from scratch, no external library |
 | Fusion | Reciprocal Rank Fusion (k=60) |
 | Query expansion | HyDE (Hypothetical Document Embeddings) |
-| Reranking | LLM-based pointwise scoring via Mistral |
+| Reranking | LLM-based pointwise scoring |
 | Vector store | In-memory numpy + atomic JSON/npz persistence |
-| Intent detection | Mistral JSON mode — 2-level classification |
+| Intent detection | LLM JSON mode — 2-level classification |
 | Answer shaping | 4 templates: factual / list / comparison / table |
 | Citation gate | Cosine threshold refusal ("insufficient evidence") |
 | Hallucination detection | `vectara/hallucination_evaluation_model` — per-sentence NLI scoring |
+| Document management | List and delete ingested documents via API and UI |
+| Semantic Map | Interactive 2D PCA scatter plot with k-means clusters and LLM-generated topic labels |
+| Topic search & filter | Search clusters by topic; select clusters to ground queries in specific content |
 | Dark UI | Single-file vanilla JS frontend served from FastAPI (`/`) |
 
 ## Project Structure
@@ -74,13 +84,15 @@ A production-grade Retrieval-Augmented Generation (RAG) backend built with FastA
 ```
 app/
 ├── main.py              # FastAPI factory + lifespan
-├── config.py            # All settings (env vars)
+├── config.py            # All settings (env vars, provider selection)
 ├── dependencies.py      # FastAPI Depends() providers
 ├── api/
 │   ├── schemas.py       # Pydantic request/response models
 │   └── routes/
 │       ├── ingest.py    # POST /ingest
 │       ├── query.py     # POST /query
+│       ├── documents.py # GET /documents, DELETE /documents/{id}
+│       ├── visualize.py # GET /visualize (PCA + clustering)
 │       └── health.py    # GET /health
 ├── ingestion/
 │   ├── pdf_extractor.py # PyMuPDF wrapper
@@ -95,6 +107,8 @@ app/
 │   ├── vector_store.py  # In-memory store + index wiring
 │   └── persistence.py   # Atomic .npz + .json save/load
 ├── llm/
+│   ├── base.py          # LLMClient protocol (provider-agnostic)
+│   ├── openai_client.py # Async OpenAI API client
 │   ├── client.py        # Async Mistral API client
 │   └── prompts/         # System prompts for each component
 │       ├── intent.py
@@ -126,7 +140,7 @@ pip install -e ".[dev]"
 
 ```bash
 cp .env.example .env
-# Edit .env and set MISTRAL_API_KEY
+# Set LLM_PROVIDER and the matching API key (see Configuration Reference below)
 ```
 
 ### 3. Start the server
@@ -135,11 +149,13 @@ cp .env.example .env
 uvicorn app.main:app --reload --port 8000
 ```
 
-The API is now available at `http://localhost:8000`.
+The API is available at `http://localhost:8000`.
 The UI is served at `http://localhost:8000` (open in a browser).
 Interactive docs: `http://localhost:8000/docs`
 
 > **Note:** First startup downloads the Vectara hallucination model (~300 MB) to `~/.cache/huggingface`.
+
+> **Provider switch warning:** Changing `LLM_PROVIDER` after ingesting documents will cause dimension mismatches. Delete `./data/store` and re-ingest all documents when switching providers.
 
 ### 4. Ingest PDFs
 
@@ -152,9 +168,15 @@ curl -X POST http://localhost:8000/ingest \
 ### 5. Query
 
 ```bash
+# Basic query
 curl -X POST http://localhost:8000/query \
   -H "Content-Type: application/json" \
-  -d '{"question": "What are the main findings of the paper?"}'
+  -d '{"question": "What are the main findings?"}'
+
+# Query grounded in specific documents
+curl -X POST http://localhost:8000/query \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What are the main findings?", "document_ids": ["uuid-1", "uuid-2"]}'
 ```
 
 ### 6. Run tests
@@ -175,7 +197,8 @@ pytest tests/ -v
   "message": "Processed 2 file(s), added 47 chunks.",
   "files_processed": 2,
   "chunks_added": 47,
-  "total_chunks_in_store": 47
+  "total_chunks_in_store": 47,
+  "document_ids": ["uuid-1", "uuid-2"]
 }
 ```
 
@@ -183,8 +206,12 @@ pytest tests/ -v
 
 **Request:**
 ```json
-{ "question": "What is the transformer architecture?" }
+{
+  "question": "What is the transformer architecture?",
+  "document_ids": ["uuid-1"]
+}
 ```
+`document_ids` is optional. When provided, retrieval is restricted to those documents.
 
 **Response (success):**
 ```json
@@ -208,13 +235,12 @@ pytest tests/ -v
     "reasoning": "Asks for a definition of a specific concept."
   },
   "refused": false,
-  "refusal_reason": null,
   "grounded": true,
   "hallucination": {
     "overall_score": 0.82,
     "consistent": true,
     "sentences": [
-      { "sentence": "The transformer architecture uses self-attention...", "score": 0.82, "flagged": false }
+      { "sentence": "The transformer uses self-attention...", "score": 0.82, "flagged": false }
     ]
   }
 }
@@ -230,6 +256,48 @@ pytest tests/ -v
 }
 ```
 
+### `GET /documents`
+
+```json
+{
+  "documents": [
+    { "document_id": "uuid-1", "source_file": "paper.pdf", "chunk_count": 23, "page_count": 8 }
+  ],
+  "total_documents": 1,
+  "total_chunks": 23
+}
+```
+
+### `DELETE /documents/{document_id}`
+
+```json
+{ "message": "Deleted ...", "chunks_removed": 23, "total_chunks_in_store": 0 }
+```
+
+### `GET /visualize`
+
+Returns 2D PCA projection of all chunk embeddings with k-means cluster labels.
+
+```json
+{
+  "total_chunks": 41,
+  "points": [
+    {
+      "chunk_index": 0, "x": 1.23, "y": -0.45, "cluster_id": 0,
+      "document_id": "uuid-1", "source_file": "paper.pdf",
+      "page_number": 2, "section_header": "Introduction",
+      "excerpt": "This paper presents..."
+    }
+  ],
+  "document_ids": ["uuid-1", "uuid-2"],
+  "clusters": [
+    { "cluster_id": 0, "label": "Model Architecture", "centroid_x": 1.1, "centroid_y": -0.3, "chunk_count": 18 }
+  ]
+}
+```
+
+Response is cached by `total_chunks` count and invalidated automatically on ingest or delete.
+
 ### `GET /health`
 
 ```json
@@ -238,12 +306,16 @@ pytest tests/ -v
 
 ## Configuration Reference
 
-All settings are read from `.env` (see `.env.example`):
+All settings are read from `.env`:
 
 | Variable | Default | Description |
 |---|---|---|
-| `MISTRAL_API_KEY` | required | Mistral AI API key |
-| `MISTRAL_EMBED_MODEL` | `mistral-embed` | Embedding model |
+| `LLM_PROVIDER` | `openai` | Provider: `openai` or `mistral` |
+| `OPENAI_API_KEY` | required if OpenAI | OpenAI API key |
+| `OPENAI_EMBED_MODEL` | `text-embedding-3-small` | Embedding model (1536-dim) |
+| `OPENAI_CHAT_MODEL` | `gpt-4o-mini` | Chat model |
+| `MISTRAL_API_KEY` | required if Mistral | Mistral AI API key |
+| `MISTRAL_EMBED_MODEL` | `mistral-embed` | Embedding model (1024-dim) |
 | `MISTRAL_CHAT_MODEL` | `mistral-large-latest` | Chat model |
 | `STORE_PATH` | `./data/store` | Persistence directory |
 | `CHUNK_SIZE_TOKENS` | `512` | Target chunk size |
@@ -257,21 +329,21 @@ All settings are read from `.env` (see `.env.example`):
 
 ## Libraries Used
 
-| Library | Purpose | Link |
-|---|---|---|
-| FastAPI | Web framework | https://fastapi.tiangolo.com |
-| Uvicorn | ASGI server | https://www.uvicorn.org |
-| PyMuPDF | PDF extraction | https://pymupdf.readthedocs.io |
-| NumPy | Vector math, BM25 | https://numpy.org |
-| httpx | Async HTTP client | https://www.python-httpx.org |
-| pydantic-settings | Configuration | https://docs.pydantic.dev/latest/concepts/pydantic_settings/ |
-| python-dotenv | .env loading | https://github.com/theskumar/python-dotenv |
-| python-multipart | File uploads | https://github.com/Kludex/python-multipart |
-| PyTorch | Hallucination model inference | https://pytorch.org |
-| Transformers | Load vectara/hallucination_evaluation_model | https://huggingface.co/docs/transformers |
-| sentencepiece | Tokenizer for the hallucination model | https://github.com/google/sentencepiece |
+| Library | Purpose |
+|---|---|
+| FastAPI | Web framework |
+| Uvicorn | ASGI server |
+| PyMuPDF | PDF extraction |
+| NumPy | Vector math, BM25, PCA, k-means |
+| httpx | Async HTTP client |
+| pydantic-settings | Configuration |
+| python-dotenv | .env loading |
+| python-multipart | File uploads |
+| PyTorch | Hallucination model inference |
+| Transformers | Load vectara/hallucination_evaluation_model |
+| sentencepiece | Tokenizer for the hallucination model |
 
-**No external vector database.  No external search library.  All retrieval logic is implemented from scratch using NumPy.**
+**No external vector database. No external search library. All retrieval and visualization logic is implemented from scratch using NumPy.**
 
 ## Design Decisions
 

@@ -79,7 +79,7 @@ class QueryPipeline:
         self._hyde = HyDETransformer(client)
         self._reranker = Reranker(client)
 
-    async def run(self, question: str) -> QueryResponse:
+    async def run(self, question: str, document_ids: list[str] | None = None) -> QueryResponse:
         """
         Execute the full RAG pipeline for a user question.
 
@@ -122,6 +122,15 @@ class QueryPipeline:
             top_k=self._settings.top_k_retrieval,
             rrf_k=self._settings.rrf_k_constant,
         )
+
+        if document_ids:
+            allowed = set(document_ids)
+            candidates = [
+                c for c in candidates
+                if self._store.get_chunk(c["index"]).document_id in allowed
+            ]
+            logger.info("Document filter applied: %d allowed, %d candidates remain",
+                        len(allowed), len(candidates))
 
         if not candidates:
             return self._refusal("no_relevant_documents", intent)

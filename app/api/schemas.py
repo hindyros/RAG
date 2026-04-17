@@ -74,6 +74,7 @@ class IngestResponse(BaseModel):
 
 class QueryRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
+    document_ids: list[str] | None = None   # optional: restrict retrieval to these docs
 
 
 class QueryResponse(BaseModel):
@@ -116,3 +117,30 @@ class HealthResponse(BaseModel):
     status: str
     total_chunks: int
     total_documents: int
+
+
+# ── Visualization ─────────────────────────────────────────────────────────────
+
+class ClusterInfo(BaseModel):
+    cluster_id: int
+    label: str
+    centroid_x: float
+    centroid_y: float
+    chunk_count: int
+
+class VisualizationPoint(BaseModel):
+    chunk_index: int
+    x: float
+    y: float
+    cluster_id: int
+    document_id: str
+    source_file: str
+    page_number: int
+    section_header: Optional[str] = None
+    excerpt: str              # first 200 chars of chunk text
+
+class VisualizationResponse(BaseModel):
+    total_chunks: int
+    points: list[VisualizationPoint]
+    document_ids: list[str]   # insertion-order; index = color palette index
+    clusters: list[ClusterInfo]

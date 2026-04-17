@@ -585,6 +585,65 @@
       padding: 32px 0;
     }
     #docs-error { font-size: 13px; color: var(--red); min-height: 16px; font-family: var(--mono); }
+
+    /* ── Semantic Map ───────────────────────────────────────────── */
+    #map-modal .modal-card {
+      width: min(860px, 96vw); height: min(82vh, 700px);
+      padding: 16px 20px 20px;
+    }
+    #map-canvas-wrap {
+      flex: 1; position: relative; overflow: hidden; min-height: 0;
+      border: 1px solid var(--border); border-radius: 2px;
+      background: var(--surface-2);
+    }
+    #map-canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+    #map-legend {
+      display: flex; flex-wrap: wrap; gap: 10px 20px;
+      flex-shrink: 0; padding-top: 10px;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--text-muted);
+      font-family: var(--mono); max-width: 260px;
+    }
+    .legend-swatch { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .legend-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #map-tooltip {
+      position: fixed; pointer-events: none; display: none;
+      background: var(--surface-3); border: 1px solid var(--border);
+      border-radius: 2px; padding: 8px 12px; max-width: 280px;
+      z-index: 9999; font-size: 12px; line-height: 1.55;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    #map-tooltip .tt-file  { color: var(--text); font-weight: 500; margin-bottom: 3px; }
+    #map-tooltip .tt-meta  { color: var(--text-muted); font-family: var(--mono); font-size: 11px; margin-bottom: 5px; }
+    #map-tooltip .tt-text  { color: var(--text-2); font-size: 12px; }
+    #map-loading {
+      position: absolute; inset: 0; display: flex;
+      align-items: center; justify-content: center;
+      font-family: var(--mono); font-size: 13px;
+      color: var(--text-muted); letter-spacing: 0.06em;
+      background: var(--surface-2);
+    }
+    #map-search-row {
+      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    }
+    #map-search {
+      flex: 1; height: 30px; padding: 0 10px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 2px; color: var(--text); font-family: var(--mono);
+      font-size: 12px; outline: none; transition: border-color 100ms;
+    }
+    #map-search:focus { border-color: var(--blue-border); }
+    #map-search::placeholder { color: var(--text-dim); }
+    #map-clear-btn {
+      display: none; height: 30px; padding: 0 10px; flex-shrink: 0;
+      background: var(--surface-3); border: 1px solid var(--border);
+      border-radius: 2px; color: var(--text-muted); font-size: 11px;
+      font-family: var(--mono); cursor: pointer; white-space: nowrap;
+      transition: color 100ms, border-color 100ms;
+    }
+    #map-clear-btn:hover { color: var(--red); border-color: rgba(205,66,70,0.4); }
   </style>
 </head>
 <body>
@@ -597,6 +656,7 @@
   </div>
   <div class="header-actions">
     <button class="btn btn-ghost" onclick="openDocsModal()">Documents</button>
+    <button class="btn btn-ghost" onclick="openMapModal()">Map</button>
     <button class="btn btn-ghost" onclick="openUploadModal()">Upload</button>
   </div>
 </header>
@@ -652,6 +712,30 @@
     <div id="docs-error"></div>
     <div id="docs-list"><div class="docs-empty">Loading…</div></div>
   </div>
+</div>
+
+<!-- ── Semantic Map modal ─────────────────────────────────────────────── -->
+<div id="map-modal" class="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title">Semantic Map</div>
+      <button class="modal-close" onclick="closeMapModal()">×</button>
+    </div>
+    <div id="map-search-row">
+      <input id="map-search" type="text" placeholder="Search topics…" autocomplete="off" spellcheck="false" oninput="onMapSearch(this.value)" />
+      <button id="map-clear-btn" onclick="clearMapSelection()">✕ Clear filter</button>
+    </div>
+    <div id="map-canvas-wrap">
+      <canvas id="map-canvas"></canvas>
+      <div id="map-loading">COMPUTING PROJECTION…</div>
+    </div>
+    <div id="map-legend"></div>
+  </div>
+</div>
+<div id="map-tooltip">
+  <div class="tt-file"></div>
+  <div class="tt-meta"></div>
+  <div class="tt-text"></div>
 </div>
 
 <script>
@@ -721,10 +805,13 @@ async function sendQuery() {
   const placeholder = appendAsciiLoading();
 
   try {
+    const queryBody = { question };
+    const docFilter = getFilteredDocIds();
+    if (docFilter) queryBody.document_ids = docFilter;
     const r = await fetch('/query', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify(queryBody),
     });
     const data = await r.json();
     clearInterval(placeholder._animInterval);
@@ -974,6 +1061,7 @@ async function uploadFiles(files) {
       document.getElementById('drop-zone').style.display = 'none';
       document.getElementById('upload-actions').classList.remove('hidden');
       await refreshHealth();
+      invalidateMapCache();
     } else {
       setUploadStatus(d.detail ?? 'Upload failed.', 'error');
     }
@@ -1070,6 +1158,7 @@ async function deleteDocument(docId, fileName, itemEl, btn) {
           document.getElementById('docs-list').innerHTML = '<div class="docs-empty">No documents ingested yet.</div>';
       }, 150);
       await refreshHealth();
+      invalidateMapCache();
     } else {
       document.getElementById('docs-error').textContent = d.detail ?? 'Delete failed.';
       btn.disabled = false;
@@ -1085,6 +1174,405 @@ async function deleteDocument(docId, fileName, itemEl, btn) {
 function scrollToBottom() {
   window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
+
+// ── Semantic Map ────────────────────────────────────────────────────
+const MAP_PALETTE = [
+  '#4ade80', '#60a5fa', '#f472b6', '#fb923c',
+  '#a78bfa', '#34d399', '#fbbf24', '#f87171',
+];
+const DOT_R = 5;
+
+const mapState = {
+  data: null,
+  docColorMap: {},
+  scale: 1,
+  offsetX: 0,
+  offsetY: 0,
+  screenPts: [],
+  clusterScreenPts: [],
+  clusterLabelRects: [],
+  hoveredIndex: -1,
+  dragging: false,
+  dragStartX: 0,
+  dragStartY: 0,
+  dragOffX: 0,
+  dragOffY: 0,
+  selectedClusters: new Set(),
+  searchHighlight: -1,
+};
+
+function openMapModal() {
+  document.getElementById('map-modal').classList.add('open');
+  document.getElementById('map-search').value = '';
+  mapState.searchHighlight = -1;
+  if (mapState.data === null) {
+    loadMapData();
+  } else {
+    resizeAndDraw();
+  }
+}
+
+function closeMapModal() {
+  document.getElementById('map-modal').classList.remove('open');
+  document.getElementById('map-tooltip').style.display = 'none';
+  mapState.searchHighlight = -1;
+}
+
+document.getElementById('map-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeMapModal();
+});
+
+async function loadMapData() {
+  document.getElementById('map-loading').style.display = 'flex';
+  try {
+    const r = await fetch('/visualize');
+    const d = await r.json();
+    mapState.data = d;
+    mapState.scale = 1;
+    mapState.offsetX = 0;
+    mapState.offsetY = 0;
+
+    // Build color map
+    mapState.docColorMap = {};
+    d.document_ids.forEach((id, i) => {
+      mapState.docColorMap[id] = MAP_PALETTE[i % MAP_PALETTE.length];
+    });
+
+    // Build legend
+    const legend = document.getElementById('map-legend');
+    legend.innerHTML = '';
+    d.document_ids.forEach((id, i) => {
+      const pt = d.points.find(p => p.document_id === id);
+      const label = pt ? pt.source_file : id;
+      const color = MAP_PALETTE[i % MAP_PALETTE.length];
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      item.innerHTML = `<span class="legend-swatch" style="background:${color}"></span><span class="legend-label" title="${label}">${label}</span>`;
+      legend.appendChild(item);
+    });
+
+    document.getElementById('map-loading').style.display = 'none';
+    resizeAndDraw();
+  } catch (_) {
+    document.getElementById('map-loading').textContent = 'FAILED TO LOAD DATA';
+  }
+}
+
+function computeScreenPoints(w, h) {
+  const pts = mapState.data.points;
+  if (!pts.length) { mapState.screenPts = []; mapState.clusterScreenPts = []; return; }
+
+  const xs = pts.map(p => p.x);
+  const ys = pts.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const rangeX = maxX - minX || 1;
+  const rangeY = maxY - minY || 1;
+  const pad = 0.05;
+
+  const toScreen = (x, y) => ({
+    sx: (pad + (x - minX) / rangeX * (1 - 2 * pad)) * w,
+    sy: (pad + (1 - (y - minY) / rangeY) * (1 - 2 * pad)) * h,
+  });
+
+  mapState.screenPts = pts.map(p => ({ ...toScreen(p.x, p.y), pt: p }));
+  mapState.clusterScreenPts = (mapState.data.clusters || []).map(c => ({
+    ...toScreen(c.centroid_x, c.centroid_y),
+    cluster: c,
+  }));
+}
+
+function _clusterIsDim(clusterId) {
+  if (mapState.selectedClusters.size > 0) return !mapState.selectedClusters.has(clusterId);
+  if (mapState.searchHighlight >= 0) return clusterId !== mapState.searchHighlight;
+  return false;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+function drawMap(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  ctx.save();
+  ctx.translate(mapState.offsetX, mapState.offsetY);
+  ctx.scale(mapState.scale, mapState.scale);
+
+  for (let i = 0; i < mapState.screenPts.length; i++) {
+    const { sx, sy, pt } = mapState.screenPts[i];
+    const color = mapState.docColorMap[pt.document_id] || '#888';
+    const hovered = i === mapState.hoveredIndex;
+    const dim = _clusterIsDim(pt.cluster_id);
+
+    ctx.beginPath();
+    ctx.arc(sx, sy, DOT_R, 0, Math.PI * 2);
+
+    if (hovered && !dim) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5 / mapState.scale;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 10;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    } else {
+      ctx.fillStyle = dim ? color + '28' : color + 'bf';
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+
+  // Draw cluster labels in screen space (on top of dots)
+  mapState.clusterLabelRects = [];
+  if (!mapState.clusterScreenPts.length) return;
+
+  ctx.font = '11px monospace';
+  const PAD_X = 8, RH = 20;
+
+  for (const { sx, sy, cluster } of mapState.clusterScreenPts) {
+    const screenX = sx * mapState.scale + mapState.offsetX;
+    const screenY = sy * mapState.scale + mapState.offsetY;
+
+    const label = cluster.label;
+    const tw = ctx.measureText(label).width;
+    const rw = tw + PAD_X * 2;
+    const rx = screenX - rw / 2;
+    const ry = screenY - RH - 10;
+
+    mapState.clusterLabelRects.push({ rx, ry, rw, rh: RH, cluster_id: cluster.cluster_id });
+
+    const isSelected = mapState.selectedClusters.has(cluster.cluster_id);
+    const isHighlighted = cluster.cluster_id === mapState.searchHighlight;
+    const dim = _clusterIsDim(cluster.cluster_id);
+
+    ctx.globalAlpha = dim ? 0.25 : 1.0;
+
+    // Background pill
+    ctx.fillStyle = isSelected ? 'rgba(74,222,128,0.2)'
+                  : isHighlighted ? 'rgba(255,255,255,0.12)'
+                  : 'rgba(14,14,14,0.85)';
+    roundRect(ctx, rx, ry, rw, RH, 3);
+    ctx.fill();
+
+    // Border
+    if (isSelected || isHighlighted) {
+      ctx.strokeStyle = isSelected ? '#4ade80' : 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = isSelected ? 1.5 : 1;
+      roundRect(ctx, rx, ry, rw, RH, 3);
+      ctx.stroke();
+    }
+
+    // Label text
+    ctx.fillStyle = isSelected ? '#4ade80' : isHighlighted ? '#e0e0e0' : '#7a7a7a';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, screenX, ry + RH / 2);
+    ctx.globalAlpha = 1.0;
+  }
+}
+
+function resizeAndDraw() {
+  const canvas = document.getElementById('map-canvas');
+  const wrap = document.getElementById('map-canvas-wrap');
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  canvas.width = w;
+  canvas.height = h;
+  if (!mapState.data || !mapState.data.points.length) return;
+  computeScreenPoints(w, h);
+  drawMap(canvas.getContext('2d'), w, h);
+}
+
+function showMapTooltip(clientX, clientY, pt) {
+  const tt = document.getElementById('map-tooltip');
+  tt.querySelector('.tt-file').textContent = pt.source_file;
+  const metaParts = ['p.' + pt.page_number];
+  if (pt.section_header) metaParts.push(pt.section_header);
+  tt.querySelector('.tt-meta').textContent = metaParts.join('  ·  ');
+  tt.querySelector('.tt-text').textContent = pt.excerpt;
+  tt.style.display = 'block';
+
+  const ttW = 280, ttH = 120;
+  let left = clientX + 14;
+  let top = clientY - 10;
+  if (left + ttW > window.innerWidth - 8) left = clientX - ttW - 14;
+  if (top + ttH > window.innerHeight - 8) top = window.innerHeight - ttH - 8;
+  tt.style.left = left + 'px';
+  tt.style.top = top + 'px';
+}
+
+function invalidateMapCache() {
+  mapState.data = null;
+  mapState.selectedClusters.clear();
+  mapState.searchHighlight = -1;
+  updateFilterBadge();
+}
+
+function onMapSearch(query) {
+  const q = query.trim().toLowerCase();
+  mapState.searchHighlight = -1;
+  if (q && mapState.data && mapState.data.clusters) {
+    // Exact substring match first, then prefix
+    const clusters = mapState.data.clusters;
+    const exact = clusters.find(c => c.label.toLowerCase().includes(q));
+    if (exact) mapState.searchHighlight = exact.cluster_id;
+  }
+  const canvas = document.getElementById('map-canvas');
+  drawMap(canvas.getContext('2d'), canvas.width, canvas.height);
+}
+
+function updateFilterBadge() {
+  const btn = document.getElementById('map-clear-btn');
+  const n = mapState.selectedClusters.size;
+  if (n > 0) {
+    btn.textContent = '✕  ' + n + ' cluster' + (n !== 1 ? 's' : '') + ' selected';
+    btn.style.display = '';
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+function clearMapSelection() {
+  mapState.selectedClusters.clear();
+  updateFilterBadge();
+  const canvas = document.getElementById('map-canvas');
+  drawMap(canvas.getContext('2d'), canvas.width, canvas.height);
+}
+
+function getFilteredDocIds() {
+  if (!mapState.selectedClusters.size || !mapState.data) return null;
+  const docIds = new Set();
+  for (const pt of mapState.data.points) {
+    if (mapState.selectedClusters.has(pt.cluster_id)) docIds.add(pt.document_id);
+  }
+  return [...docIds];
+}
+
+function setupMapEvents() {
+  const canvas = document.getElementById('map-canvas');
+
+  canvas.addEventListener('mousemove', e => {
+    if (!mapState.screenPts.length) return;
+
+    if (mapState.dragging) {
+      mapState.offsetX = mapState.dragOffX + (e.clientX - mapState.dragStartX);
+      mapState.offsetY = mapState.dragOffY + (e.clientY - mapState.dragStartY);
+      drawMap(canvas.getContext('2d'), canvas.width, canvas.height);
+      return;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const mx = (cx - mapState.offsetX) / mapState.scale;
+    const my = (cy - mapState.offsetY) / mapState.scale;
+    const hitR = (DOT_R + 4) / mapState.scale;
+
+    // Dot hover
+    let found = -1;
+    for (let i = 0; i < mapState.screenPts.length; i++) {
+      const { sx, sy } = mapState.screenPts[i];
+      const dx = mx - sx, dy = my - sy;
+      if (dx * dx + dy * dy < hitR * hitR) { found = i; break; }
+    }
+
+    if (found !== mapState.hoveredIndex) {
+      mapState.hoveredIndex = found;
+      drawMap(canvas.getContext('2d'), canvas.width, canvas.height);
+    }
+
+    // Cluster label hover
+    const overLabel = mapState.clusterLabelRects.some(
+      r => cx >= r.rx && cx <= r.rx + r.rw && cy >= r.ry && cy <= r.ry + r.rh
+    );
+
+    if (overLabel || found >= 0) {
+      canvas.style.cursor = 'pointer';
+      if (found >= 0 && !overLabel) {
+        showMapTooltip(e.clientX, e.clientY, mapState.screenPts[found].pt);
+      } else {
+        document.getElementById('map-tooltip').style.display = 'none';
+      }
+    } else {
+      document.getElementById('map-tooltip').style.display = 'none';
+      canvas.style.cursor = 'crosshair';
+    }
+  });
+
+  canvas.addEventListener('click', e => {
+    if (mapState.dragging) return;
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    for (const r of mapState.clusterLabelRects) {
+      if (cx >= r.rx && cx <= r.rx + r.rw && cy >= r.ry && cy <= r.ry + r.rh) {
+        if (mapState.selectedClusters.has(r.cluster_id)) {
+          mapState.selectedClusters.delete(r.cluster_id);
+        } else {
+          mapState.selectedClusters.add(r.cluster_id);
+        }
+        updateFilterBadge();
+        drawMap(canvas.getContext('2d'), canvas.width, canvas.height);
+        return;
+      }
+    }
+  });
+
+  canvas.addEventListener('mousedown', e => {
+    mapState.dragging = true;
+    mapState.dragStartX = e.clientX;
+    mapState.dragStartY = e.clientY;
+    mapState.dragOffX = mapState.offsetX;
+    mapState.dragOffY = mapState.offsetY;
+    canvas.style.cursor = 'grabbing';
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (mapState.dragging) {
+      mapState.dragging = false;
+      canvas.style.cursor = 'crosshair';
+    }
+  });
+
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const delta = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+    const newScale = Math.min(20, Math.max(0.3, mapState.scale * delta));
+    mapState.offsetX = mx - (mx - mapState.offsetX) * (newScale / mapState.scale);
+    mapState.offsetY = my - (my - mapState.offsetY) * (newScale / mapState.scale);
+    mapState.scale = newScale;
+    drawMap(canvas.getContext('2d'), canvas.width, canvas.height);
+  }, { passive: false });
+
+  canvas.addEventListener('dblclick', () => {
+    mapState.scale = 1;
+    mapState.offsetX = 0;
+    mapState.offsetY = 0;
+    drawMap(canvas.getContext('2d'), canvas.width, canvas.height);
+  });
+
+  window.addEventListener('resize', () => {
+    if (document.getElementById('map-modal').classList.contains('open')) {
+      resizeAndDraw();
+    }
+  });
+}
+
+setupMapEvents();
 
 init();
 </script>

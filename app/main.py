@@ -15,7 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.routes import documents, health, ingest, query
+from app.api.routes import documents, health, ingest, query, visualize
 from app.config import get_settings
 from app.hallucination.checker import HallucinationChecker
 from app.llm.base import LLMClient
@@ -60,6 +60,7 @@ async def lifespan(app: FastAPI):
     app.state.llm_client = client
     app.state.hallucination_checker = checker
     app.state.query_pipeline = pipeline
+    app.state.viz_cache = None
 
     logger.info(
         "Startup complete — %d chunks across %d documents in store.",
@@ -97,6 +98,7 @@ def create_app() -> FastAPI:
     app.include_router(ingest.router, tags=["Ingestion"])
     app.include_router(query.router, tags=["Query"])
     app.include_router(documents.router, tags=["Documents"])
+    app.include_router(visualize.router, tags=["Visualize"])
 
     # Must be mounted LAST — StaticFiles on "/" would shadow API routes if first
     app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
